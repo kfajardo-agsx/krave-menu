@@ -22,7 +22,7 @@ export const FACEBOOK_PAGE = "kravezamboanga";
 // Messenger link — customers tap "Send Order" and it opens Messenger with the order summary
 export function getMessengerLink(message: string): string {
   const encoded = encodeURIComponent(message);
-  return `https://m.me/${FACEBOOK_PAGE}?text=${encoded}`;
+  return `https://www.messenger.com/t/${FACEBOOK_PAGE}?text=${encoded}`;
 }
 
 export const menu: MenuCategory[] = [

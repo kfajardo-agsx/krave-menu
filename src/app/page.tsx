@@ -440,7 +440,7 @@ export default function Home() {
 
       {/* Floating Messenger button — always visible */}
       <a
-        href={`https://m.me/${FACEBOOK_PAGE}`}
+        href={`https://www.messenger.com/t/${FACEBOOK_PAGE}`}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-5 right-5 z-20 w-14 h-14 bg-[#0084ff] rounded-full shadow-lg flex items-center justify-center hover:bg-[#0073e6] transition-colors hover:scale-105"
