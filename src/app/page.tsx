@@ -5,78 +5,196 @@ import Image from "next/image";
 import { menu, STORE_NAME, FACEBOOK_PAGE, getMessengerLink } from "@/data/menu";
 import type { MenuItem } from "@/data/menu";
 
+/* ── Types ── */
+
+interface ToppingSelection {
+  item: MenuItem;
+  qty: number;
+}
+
+interface Bowl {
+  id: string;
+  ramen: MenuItem;
+  toppings: ToppingSelection[];
+  cookIt: boolean;
+}
+
 interface OrderItem {
   item: MenuItem;
   qty: number;
 }
 
+/* ── Component ── */
+
 export default function Home() {
-  const [order, setOrder] = useState<Map<string, OrderItem>>(new Map());
+  /* Order state */
+  const [bowls, setBowls] = useState<Bowl[]>([]);
+  const [extras, setExtras] = useState<Map<string, OrderItem>>(new Map());
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [showOrder, setShowOrder] = useState(false);
 
-  function addItem(item: MenuItem) {
-    setOrder((prev) => {
+  /* Bowl builder state */
+  const [buildingRamen, setBuildingRamen] = useState<MenuItem | null>(null);
+  const [buildingToppings, setBuildingToppings] = useState<Map<string, number>>(
+    new Map()
+  );
+  const [buildingCookIt, setBuildingCookIt] = useState(false);
+
+  /* Lookup categories */
+  const toppingsCategory = menu.find((c) => c.id === "toppings");
+  const cookItCategory = menu.find((c) => c.id === "cook-it");
+  const cookItItem = cookItCategory?.items[0];
+  const mainCategories = menu.filter(
+    (c) => c.id !== "toppings" && c.id !== "cook-it"
+  );
+
+  /* ── Bowl builder helpers ── */
+
+  function startBowl(ramen: MenuItem) {
+    setBuildingRamen(ramen);
+    setBuildingToppings(new Map());
+    setBuildingCookIt(false);
+  }
+
+  function closeBowlBuilder() {
+    setBuildingRamen(null);
+  }
+
+  function addBuildingTopping(id: string) {
+    setBuildingToppings((prev) => {
+      const next = new Map(prev);
+      next.set(id, (next.get(id) || 0) + 1);
+      return next;
+    });
+  }
+
+  function removeBuildingTopping(id: string) {
+    setBuildingToppings((prev) => {
+      const next = new Map(prev);
+      const cur = next.get(id) || 0;
+      if (cur <= 1) next.delete(id);
+      else next.set(id, cur - 1);
+      return next;
+    });
+  }
+
+  function confirmBowl() {
+    if (!buildingRamen) return;
+    const toppings: ToppingSelection[] = [];
+    if (toppingsCategory) {
+      for (const [id, qty] of buildingToppings) {
+        const item = toppingsCategory.items.find((t) => t.id === id);
+        if (item && qty > 0) toppings.push({ item, qty });
+      }
+    }
+    setBowls((prev) => [
+      ...prev,
+      {
+        id: `bowl-${Date.now()}`,
+        ramen: buildingRamen,
+        toppings,
+        cookIt: buildingCookIt,
+      },
+    ]);
+    closeBowlBuilder();
+  }
+
+  function removeBowl(bowlId: string) {
+    setBowls((prev) => prev.filter((b) => b.id !== bowlId));
+  }
+
+  /* ── Extras (drinks, etc.) ── */
+
+  function addExtra(item: MenuItem) {
+    setExtras((prev) => {
       const next = new Map(prev);
       const existing = next.get(item.id);
-      if (existing) {
-        next.set(item.id, { item, qty: existing.qty + 1 });
-      } else {
-        next.set(item.id, { item, qty: 1 });
-      }
+      if (existing) next.set(item.id, { item, qty: existing.qty + 1 });
+      else next.set(item.id, { item, qty: 1 });
       return next;
     });
   }
 
-  function removeItem(itemId: string) {
-    setOrder((prev) => {
+  function removeExtra(itemId: string) {
+    setExtras((prev) => {
       const next = new Map(prev);
       const existing = next.get(itemId);
-      if (existing && existing.qty > 1) {
+      if (existing && existing.qty > 1)
         next.set(itemId, { item: existing.item, qty: existing.qty - 1 });
-      } else {
-        next.delete(itemId);
-      }
+      else next.delete(itemId);
       return next;
     });
   }
 
-  const orderItems = Array.from(order.values());
-  const totalItems = orderItems.reduce((sum, o) => sum + o.qty, 0);
-  const totalPrice = orderItems.reduce(
+  /* ── Totals ── */
+
+  function bowlPrice(bowl: Bowl): number {
+    let total = bowl.ramen.price;
+    for (const t of bowl.toppings) total += t.item.price * t.qty;
+    if (bowl.cookIt && cookItItem) total += cookItItem.price;
+    return total;
+  }
+
+  const bowlsTotal = bowls.reduce((sum, b) => sum + bowlPrice(b), 0);
+  const extrasItems = Array.from(extras.values());
+  const extrasTotal = extrasItems.reduce(
     (sum, o) => sum + o.item.price * o.qty,
     0
   );
+  const totalPrice = bowlsTotal + extrasTotal;
+  const totalItems =
+    bowls.length + extrasItems.reduce((sum, o) => sum + o.qty, 0);
+
+  /* Bowl builder running total */
+  const buildingTotal = buildingRamen
+    ? buildingRamen.price +
+      Array.from(buildingToppings.entries()).reduce((sum, [id, qty]) => {
+        const item = toppingsCategory?.items.find((t) => t.id === id);
+        return sum + (item ? item.price * qty : 0);
+      }, 0) +
+      (buildingCookIt && cookItItem ? cookItItem.price : 0)
+    : 0;
+
+  /* ── Messenger message ── */
 
   function buildOrderMessage(): string {
-    const lines = [
-      `Hi! I'd like to order from ${STORE_NAME}:`,
-      "",
-      ...orderItems.map(
-        (o) => `- ${o.item.name} x${o.qty} — ₱${o.item.price * o.qty}`
-      ),
-      "",
-      `Total: ₱${totalPrice}`,
-    ];
-    if (customerName.trim()) {
-      lines.push(`Name: ${customerName.trim()}`);
+    const lines = [`Hi! I'd like to order from ${STORE_NAME}:`, ""];
+    bowls.forEach((bowl, i) => {
+      lines.push(`Bowl ${i + 1}: ${bowl.ramen.name} — ₱${bowl.ramen.price}`);
+      for (const t of bowl.toppings) {
+        lines.push(
+          `  + ${t.item.name}${t.qty > 1 ? ` x${t.qty}` : ""} — ₱${t.item.price * t.qty}`
+        );
+      }
+      if (bowl.cookIt && cookItItem) {
+        lines.push(`  + Cook My Ramen — ₱${cookItItem.price}`);
+      }
+      lines.push(`  Subtotal: ₱${bowlPrice(bowl)}`);
+    });
+    if (extrasItems.length > 0) {
+      lines.push("");
+      for (const o of extrasItems) {
+        lines.push(
+          `- ${o.item.name} x${o.qty} — ₱${o.item.price * o.qty}`
+        );
+      }
     }
-    if (customerPhone.trim()) {
-      lines.push(`Mobile: ${customerPhone.trim()}`);
-    }
-    if (customerAddress.trim()) {
+    lines.push("", `Total: ₱${totalPrice}`);
+    if (customerName.trim()) lines.push(`Name: ${customerName.trim()}`);
+    if (customerPhone.trim()) lines.push(`Mobile: ${customerPhone.trim()}`);
+    if (customerAddress.trim())
       lines.push(`Delivery Address: ${customerAddress.trim()}`);
-    }
     lines.push("", "Thank you!");
     return lines.join("\n");
   }
 
   function handleSendOrder() {
-    const message = buildOrderMessage();
-    window.open(getMessengerLink(message), "_blank");
+    window.open(getMessengerLink(buildOrderMessage()), "_blank");
   }
+
+  /* ── Render ── */
 
   return (
     <div className="flex flex-col min-h-full">
@@ -105,8 +223,10 @@ export default function Home() {
 
       {/* Menu */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
-        {menu.map((category) => {
-          const isCompact = category.id === "toppings" || category.id === "drinks";
+        {mainCategories.map((category) => {
+          const isRamen = category.id === "ramen";
+          const isCompact = category.id === "drinks";
+
           return (
             <section key={category.id} className="mb-8">
               <h2 className="text-lg font-bold text-gray-700 border-b-2 border-sakura-light pb-2 mb-1">
@@ -120,51 +240,86 @@ export default function Home() {
               {!category.description && <div className="mb-4" />}
 
               {category.showcase ? (
-                /* Showcase section — display items but not orderable */
-                <div>
-                  {category.items.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      {category.items.map((item) => (
-                        <div
-                          key={item.id}
-                          className="bg-white rounded-lg overflow-hidden border border-sakura-light"
-                        >
-                          {item.image && (
-                            <div className="relative w-full aspect-square">
-                              <Image
-                                src={item.image}
-                                alt={item.name}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 672px) 50vw, 336px"
-                              />
-                            </div>
-                          )}
-                          <div className="px-3 py-3">
-                            <p className="text-sm font-medium text-gray-900 leading-tight">
-                              {item.name}
+                /* ── Showcase (bingsu) — compact ── */
+                <div className="space-y-3">
+                  {category.items.length > 0 && (() => {
+                    const mainItems = category.items.filter((i) => !i.name.toLowerCase().includes("additional") && !i.name.toLowerCase().includes("extra"));
+                    const extraItems = category.items.filter((i) => i.name.toLowerCase().includes("additional") || i.name.toLowerCase().includes("extra"));
+                    const mainPrice = mainItems[0]?.price;
+                    return (
+                      <div className="bg-white rounded-xl p-4 border border-sakura-light">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                              {mainItems.map((i) => i.name.replace(" Bingsu", "")).join(", ")}
                             </p>
-                            <p className="text-xs text-sakura-dark font-bold mt-1">
-                              ₱{item.price}
-                            </p>
+                            {extraItems.map((i) => (
+                              <p key={i.id} className="text-xs text-gray-400 mt-1">
+                                {i.name} +₱{i.price}
+                              </p>
+                            ))}
                           </div>
+                          {mainPrice && (
+                            <p className="text-sakura-dark font-bold shrink-0 ml-3">
+                              ₱{mainPrice}
+                            </p>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })()}
                   {category.showcaseNote && (
-                    <div className="bg-sakura-50 rounded-xl p-5 text-center border border-sakura-light">
+                    <div className="bg-sakura-50 rounded-xl p-4 text-center border border-sakura-light">
                       <p className="text-sm text-gray-600 leading-relaxed">
                         {category.showcaseNote}
                       </p>
                     </div>
                   )}
                 </div>
+              ) : isRamen ? (
+                /* ── Ramen cards — tap to build a bowl ── */
+                <div className="space-y-3">
+                  {category.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border border-gray-100"
+                    >
+                      {item.image && (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          width={72}
+                          height={72}
+                          className="rounded-lg object-cover shrink-0 mr-3"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0 mr-3">
+                        <h3 className="font-semibold text-gray-900">
+                          {item.name}
+                        </h3>
+                        {item.description && (
+                          <p className="text-sm text-gray-500 mt-0.5">
+                            {item.description}
+                          </p>
+                        )}
+                        <p className="text-sakura-dark font-bold mt-1">
+                          ₱{item.price}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => startBowl(item)}
+                        className="px-4 py-1.5 bg-sakura text-white text-sm font-semibold rounded-full hover:bg-sakura-dark transition-colors shrink-0"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
               ) : isCompact ? (
-                /* Compact grid for toppings & drinks */
+                /* ── Compact grid (drinks) ── */
                 <div className="grid grid-cols-2 gap-2">
                   {category.items.map((item) => {
-                    const inOrder = order.get(item.id);
+                    const inOrder = extras.get(item.id);
                     return (
                       <div
                         key={item.id}
@@ -197,7 +352,7 @@ export default function Home() {
                           {inOrder ? (
                             <>
                               <button
-                                onClick={() => removeItem(item.id)}
+                                onClick={() => removeExtra(item.id)}
                                 className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center hover:bg-gray-300 transition-colors"
                               >
                                 -
@@ -206,7 +361,7 @@ export default function Home() {
                                 {inOrder.qty}
                               </span>
                               <button
-                                onClick={() => addItem(item)}
+                                onClick={() => addExtra(item)}
                                 className="w-6 h-6 rounded-full bg-sakura text-white font-bold text-sm flex items-center justify-center hover:bg-sakura-dark transition-colors"
                               >
                                 +
@@ -214,7 +369,7 @@ export default function Home() {
                             </>
                           ) : (
                             <button
-                              onClick={() => addItem(item)}
+                              onClick={() => addExtra(item)}
                               className="px-3 py-1 bg-sakura text-white text-xs font-semibold rounded-full hover:bg-sakura-dark transition-colors"
                             >
                               +
@@ -226,10 +381,10 @@ export default function Home() {
                   })}
                 </div>
               ) : (
-                /* Full cards for ramen & cook-it */
+                /* ── Full cards fallback ── */
                 <div className="space-y-3">
                   {category.items.map((item) => {
-                    const inOrder = order.get(item.id);
+                    const inOrder = extras.get(item.id);
                     return (
                       <div
                         key={item.id}
@@ -261,7 +416,7 @@ export default function Home() {
                           {inOrder ? (
                             <>
                               <button
-                                onClick={() => removeItem(item.id)}
+                                onClick={() => removeExtra(item.id)}
                                 className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 font-bold text-lg flex items-center justify-center hover:bg-gray-300 transition-colors"
                               >
                                 -
@@ -270,7 +425,7 @@ export default function Home() {
                                 {inOrder.qty}
                               </span>
                               <button
-                                onClick={() => addItem(item)}
+                                onClick={() => addExtra(item)}
                                 className="w-8 h-8 rounded-full bg-sakura text-white font-bold text-lg flex items-center justify-center hover:bg-sakura-dark transition-colors"
                               >
                                 +
@@ -278,7 +433,7 @@ export default function Home() {
                             </>
                           ) : (
                             <button
-                              onClick={() => addItem(item)}
+                              onClick={() => addExtra(item)}
                               className="px-4 py-1.5 bg-sakura text-white text-sm font-semibold rounded-full hover:bg-sakura-dark transition-colors"
                             >
                               Add
@@ -295,13 +450,188 @@ export default function Home() {
         })}
       </main>
 
+      {/* ── Bowl Builder Sheet ── */}
+      {buildingRamen && (
+        <div className="fixed inset-0 z-30 flex flex-col">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={closeBowlBuilder}
+          />
+          <div className="relative mt-auto bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="px-4 py-4 border-b border-sakura-light flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Build Your Bowl
+                </h2>
+                <p className="text-sm text-gray-500">{buildingRamen.name}</p>
+              </div>
+              <button
+                onClick={closeBowlBuilder}
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+              {/* Cook it option */}
+              {cookItItem && (
+                <div>
+                  <h3 className="text-sm font-bold text-gray-700 mb-2">
+                    Want us to cook it?
+                  </h3>
+                  <button
+                    onClick={() => setBuildingCookIt((v) => !v)}
+                    className={`w-full flex items-center justify-between rounded-lg px-4 py-3 border transition-colors ${
+                      buildingCookIt
+                        ? "border-sakura bg-sakura-50"
+                        : "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {cookItItem.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {cookItItem.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-sakura-dark">
+                        +₱{cookItItem.price}
+                      </span>
+                      <div
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          buildingCookIt
+                            ? "bg-sakura border-sakura"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {buildingCookIt && (
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                          >
+                            <path
+                              d="M2.5 6L5 8.5L9.5 3.5"
+                              stroke="white"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* Toppings */}
+              {toppingsCategory && toppingsCategory.items.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-gray-700 mb-2">
+                    Add Toppings
+                  </h3>
+                  <div className="space-y-2">
+                    {toppingsCategory.items.map((topping) => {
+                      const qty = buildingToppings.get(topping.id) || 0;
+                      return (
+                        <div
+                          key={topping.id}
+                          className={`flex items-center justify-between rounded-lg px-3 py-2.5 border transition-colors ${
+                            qty > 0
+                              ? "border-sakura bg-sakura-50"
+                              : "border-gray-100 bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 mr-2">
+                            {topping.image && (
+                              <Image
+                                src={topping.image}
+                                alt={topping.name}
+                                width={36}
+                                height={36}
+                                className="rounded-md object-cover shrink-0"
+                              />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 leading-tight">
+                                {topping.name}
+                              </p>
+                              <p className="text-xs text-sakura-dark font-bold">
+                                +₱{topping.price}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {qty > 0 ? (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    removeBuildingTopping(topping.id)
+                                  }
+                                  className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                >
+                                  -
+                                </button>
+                                <span className="w-5 text-center font-semibold text-xs">
+                                  {qty}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    addBuildingTopping(topping.id)
+                                  }
+                                  className="w-6 h-6 rounded-full bg-sakura text-white font-bold text-sm flex items-center justify-center hover:bg-sakura-dark transition-colors"
+                                >
+                                  +
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  addBuildingTopping(topping.id)
+                                }
+                                className="px-3 py-1 bg-sakura text-white text-xs font-semibold rounded-full hover:bg-sakura-dark transition-colors"
+                              >
+                                +
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm button */}
+            <div className="border-t border-sakura-light px-4 py-4">
+              <button
+                onClick={confirmBowl}
+                className="w-full bg-sakura text-white font-bold py-3.5 rounded-full text-base hover:bg-sakura-dark transition-colors"
+              >
+                Add to Order — ₱{buildingTotal}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sticky bottom bar */}
-      {totalItems > 0 && !showOrder && (
+      {totalItems > 0 && !showOrder && !buildingRamen && (
         <div className="sticky bottom-0 z-10 bg-white border-t border-sakura-light shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">
-                {totalItems} item{totalItems > 1 ? "s" : ""}
+                {bowls.length} bowl{bowls.length !== 1 ? "s" : ""}
+                {extrasItems.length > 0 &&
+                  ` + ${extrasItems.reduce((s, o) => s + o.qty, 0)} drink${extrasItems.reduce((s, o) => s + o.qty, 0) !== 1 ? "s" : ""}`}
               </p>
               <p className="text-lg font-bold text-gray-900">₱{totalPrice}</p>
             </div>
@@ -315,16 +645,13 @@ export default function Home() {
         </div>
       )}
 
-      {/* Order review panel (slide-up) */}
+      {/* ── Order Review Panel ── */}
       {showOrder && (
         <div className="fixed inset-0 z-30 flex flex-col">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setShowOrder(false)}
           />
-
-          {/* Panel */}
           <div className="relative mt-auto bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col">
             <div className="px-4 py-4 border-b border-sakura-light flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Your Order</h2>
@@ -336,51 +663,121 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              {orderItems.length === 0 ? (
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              {bowls.length === 0 && extrasItems.length === 0 ? (
                 <p className="text-gray-400 text-center py-8">
                   Your order is empty
                 </p>
               ) : (
-                orderItems.map((o) => (
-                  <div
-                    key={o.item.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900">
-                        {o.item.name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        ₱{o.item.price} each
+                <>
+                  {/* Bowls */}
+                  {bowls.map((bowl, i) => (
+                    <div
+                      key={bowl.id}
+                      className="bg-gray-50 rounded-xl p-3 space-y-1"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            Bowl {i + 1}: {bowl.ramen.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            ₱{bowl.ramen.price}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeBowl(bowl.id)}
+                          className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {bowl.toppings.map((t) => (
+                        <p
+                          key={t.item.id}
+                          className="text-sm text-gray-600 pl-3"
+                        >
+                          + {t.item.name}
+                          {t.qty > 1 ? ` x${t.qty}` : ""}{" "}
+                          <span className="text-gray-400">
+                            ₱{t.item.price * t.qty}
+                          </span>
+                        </p>
+                      ))}
+                      {bowl.cookIt && cookItItem ? (
+                        <p className="text-sm text-gray-600 pl-3">
+                          + {cookItItem.name}{" "}
+                          <span className="text-gray-400">
+                            ₱{cookItItem.price}
+                          </span>
+                        </p>
+                      ) : (
+                        <div className="mt-1 space-y-1.5">
+                          <p className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-1.5">
+                            Not cooked — your ramen will be served uncooked
+                          </p>
+                          <button
+                            onClick={() =>
+                              setBowls((prev) =>
+                                prev.map((b) =>
+                                  b.id === bowl.id ? { ...b, cookIt: true } : b
+                                )
+                              )
+                            }
+                            className="flex items-center gap-2 text-xs text-gray-600 px-3 py-1.5 hover:text-sakura-dark transition-colors"
+                          >
+                            <div className="w-4 h-4 rounded border-2 border-gray-300 shrink-0" />
+                            <span>Add Cook My Ramen (+₱{cookItItem?.price})</span>
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-sm font-semibold text-sakura-dark text-right">
+                        ₱{bowlPrice(bowl)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => removeItem(o.item.id)}
-                        className="w-7 h-7 rounded-full bg-gray-200 text-gray-700 font-bold flex items-center justify-center hover:bg-gray-300 transition-colors"
-                      >
-                        -
-                      </button>
-                      <span className="w-6 text-center font-semibold text-sm">
-                        {o.qty}
-                      </span>
-                      <button
-                        onClick={() => addItem(o.item)}
-                        className="w-7 h-7 rounded-full bg-sakura text-white font-bold flex items-center justify-center hover:bg-sakura-dark transition-colors"
-                      >
-                        +
-                      </button>
-                      <p className="w-16 text-right font-semibold text-gray-900">
-                        ₱{o.item.price * o.qty}
-                      </p>
+                  ))}
+
+                  {/* Extras */}
+                  {extrasItems.map((o) => (
+                    <div
+                      key={o.item.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900">
+                          {o.item.name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          ₱{o.item.price} each
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => removeExtra(o.item.id)}
+                          className="w-7 h-7 rounded-full bg-gray-200 text-gray-700 font-bold flex items-center justify-center hover:bg-gray-300 transition-colors"
+                        >
+                          -
+                        </button>
+                        <span className="w-6 text-center font-semibold text-sm">
+                          {o.qty}
+                        </span>
+                        <button
+                          onClick={() => addExtra(o.item)}
+                          className="w-7 h-7 rounded-full bg-sakura text-white font-bold flex items-center justify-center hover:bg-sakura-dark transition-colors"
+                        >
+                          +
+                        </button>
+                        <p className="w-16 text-right font-semibold text-gray-900">
+                          ₱{o.item.price * o.qty}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </>
               )}
             </div>
 
-            {orderItems.length > 0 && (
+            {(bowls.length > 0 || extrasItems.length > 0) && (
               <div className="border-t border-sakura-light px-4 py-4 space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-lg">Total</span>
@@ -438,7 +835,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Floating Messenger button — always visible */}
+      {/* Floating Messenger button */}
       <a
         href={`https://www.messenger.com/t/${FACEBOOK_PAGE}`}
         target="_blank"
@@ -446,12 +843,7 @@ export default function Home() {
         className="fixed bottom-5 right-5 z-20 w-14 h-14 bg-[#0084ff] rounded-full shadow-lg flex items-center justify-center hover:bg-[#0073e6] transition-colors hover:scale-105"
         aria-label="Message us on Facebook"
       >
-        <svg
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
-          fill="white"
-        >
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
           <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.907 1.453 5.497 3.727 7.191V22l3.414-1.876c.91.252 1.876.388 2.859.388 5.523 0 10-4.145 10-9.243S17.523 2 12 2zm1.07 12.449-2.545-2.714-4.97 2.714 5.467-5.804 2.609 2.714 4.906-2.714-5.467 5.804z" />
         </svg>
       </a>
@@ -461,7 +853,9 @@ export default function Home() {
         <div className="bg-sakura-50 rounded-xl p-5 border border-sakura-light text-center">
           <h3 className="font-bold text-gray-700 mb-2">Delivery</h3>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Delivery is done through <span className="font-semibold">Maxim</span>. The delivery fee depends on the Maxim rate based on your location.
+            Delivery is done through{" "}
+            <span className="font-semibold">Maxim</span>. The delivery fee
+            depends on the Maxim rate based on your location.
           </p>
         </div>
       </section>
