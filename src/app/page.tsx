@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { menu, STORE_NAME, FACEBOOK_PAGE, getMessengerLink } from "@/data/menu";
+import { menu, APP_NAME, STORE_NAME, FACEBOOK_PAGE } from "@/data/menu";
 import type { MenuItem } from "@/data/menu";
 
 /* ── Types ── */
@@ -24,6 +24,22 @@ interface OrderItem {
   qty: number;
 }
 
+/* ── Spicy rating ── */
+
+function SpicyRating({ level }: { level: number }) {
+  if (!level) return null;
+  const labels = ["", "Mild", "Spicy", "Very Spicy"];
+  return (
+    <span
+      className="inline-flex items-center text-sm leading-none align-middle"
+      title={labels[level]}
+      aria-label={labels[level]}
+    >
+      {"🌶️".repeat(level)}
+    </span>
+  );
+}
+
 /* ── Component ── */
 
 export default function Home() {
@@ -34,6 +50,7 @@ export default function Home() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [showOrder, setShowOrder] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   /* Bowl builder state */
   const [buildingRamen, setBuildingRamen] = useState<MenuItem | null>(null);
@@ -49,6 +66,54 @@ export default function Home() {
   const mainCategories = menu.filter(
     (c) => c.id !== "toppings" && c.id !== "cook-it"
   );
+
+  /* Tabbed nav — scrollspy + click-to-scroll */
+  const [activeCategory, setActiveCategory] = useState<string>(
+    mainCategories[0]?.id ?? ""
+  );
+  const tabsRef = useRef<HTMLDivElement | null>(null);
+  const tabButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const suppressObserverRef = useRef(false);
+
+  useEffect(() => {
+    // rootMargin top = header (~72px) + tabs (~44px) + a touch of breathing room
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (suppressObserverRef.current) return;
+        // Pick the entry closest to the top of the detection zone
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) {
+          setActiveCategory(visible[0].target.id);
+        }
+      },
+      { rootMargin: "-120px 0px -65% 0px", threshold: 0 }
+    );
+    for (const c of mainCategories) {
+      const el = document.getElementById(c.id);
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [mainCategories]);
+
+  // Keep the active tab pill centered in the horizontally-scrolling tab bar
+  useEffect(() => {
+    const btn = tabButtonRefs.current.get(activeCategory);
+    if (btn) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeCategory]);
+
+  function scrollToCategory(id: string) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    setActiveCategory(id);
+    // Suppress observer briefly so mid-scroll intersections don't fight the click
+    suppressObserverRef.current = true;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      suppressObserverRef.current = false;
+    }, 700);
+  }
 
   /* ── Bowl builder helpers ── */
 
@@ -190,8 +255,40 @@ export default function Home() {
     return lines.join("\n");
   }
 
-  function handleSendOrder() {
-    window.open(getMessengerLink(buildOrderMessage()), "_blank");
+  async function handleSendOrder() {
+    const message = buildOrderMessage();
+    let copied = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+        copied = true;
+      }
+    } catch {
+      // Clipboard may be blocked (insecure context, permissions) — fall through
+    }
+    if (!copied) {
+      // Fallback: a hidden textarea + execCommand still works on older mobile browsers
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = message;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        copied = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        copied = false;
+      }
+    }
+    setToast(
+      copied
+        ? "Order copied! Paste it in Messenger to send."
+        : "Couldn't auto-copy — please type your order in Messenger."
+    );
+    window.setTimeout(() => setToast(null), 4000);
+    window.open(`https://www.messenger.com/t/${FACEBOOK_PAGE}`, "_blank");
   }
 
   /* ── Render ── */
@@ -202,7 +299,7 @@ export default function Home() {
       <header className="sticky top-0 z-20 bg-sakura text-white shadow-md">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{STORE_NAME}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{APP_NAME}</h1>
             <p className="text-white/70 text-sm">
               Order via Facebook Messenger
             </p>
@@ -221,6 +318,35 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Category tabs */}
+      <nav className="sticky top-[72px] z-10 bg-white border-b border-sakura-light pt-2">
+        <div
+          ref={tabsRef}
+          className="max-w-2xl mx-auto px-4 flex gap-2 overflow-x-auto scrollbar-hide"
+        >
+          {mainCategories.map((c) => {
+            const isActive = c.id === activeCategory;
+            return (
+              <button
+                key={c.id}
+                ref={(el) => {
+                  if (el) tabButtonRefs.current.set(c.id, el);
+                  else tabButtonRefs.current.delete(c.id);
+                }}
+                onClick={() => scrollToCategory(c.id)}
+                className={`shrink-0 px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                  isActive
+                    ? "border-sakura text-sakura-dark"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       {/* Menu */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
         {mainCategories.map((category) => {
@@ -228,7 +354,7 @@ export default function Home() {
           const isCompact = category.id === "drinks";
 
           return (
-            <section key={category.id} className="mb-8">
+            <section key={category.id} id={category.id} className="mb-8 scroll-mt-32">
               <h2 className="text-lg font-bold text-gray-700 border-b-2 border-sakura-light pb-2 mb-1">
                 {category.name}
               </h2>
@@ -248,8 +374,17 @@ export default function Home() {
                     const mainPrice = mainItems[0]?.price;
                     return (
                       <div className="bg-white rounded-xl p-4 border border-sakura-light">
-                        <div className="flex items-start justify-between">
-                          <div>
+                        <div className="flex items-start gap-3">
+                          {category.image && (
+                            <Image
+                              src={category.image}
+                              alt={category.name}
+                              width={80}
+                              height={80}
+                              className="rounded-lg object-contain shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm text-gray-700 leading-relaxed">
                               {mainItems.map((i) => i.name.replace(" Bingsu", "")).join(", ")}
                             </p>
@@ -260,7 +395,7 @@ export default function Home() {
                             ))}
                           </div>
                           {mainPrice && (
-                            <p className="text-sakura-dark font-bold shrink-0 ml-3">
+                            <p className="text-sakura-dark font-bold shrink-0">
                               ₱{mainPrice}
                             </p>
                           )}
@@ -294,9 +429,12 @@ export default function Home() {
                         />
                       )}
                       <div className="flex-1 min-w-0 mr-3">
-                        <h3 className="font-semibold text-gray-900">
-                          {item.name}
-                        </h3>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="font-semibold text-gray-900">
+                            {item.name}
+                          </h3>
+                          {item.spicy ? <SpicyRating level={item.spicy} /> : null}
+                        </div>
                         {item.description && (
                           <p className="text-sm text-gray-500 mt-0.5">
                             {item.description}
@@ -336,16 +474,23 @@ export default function Home() {
                               alt={item.name}
                               width={36}
                               height={36}
-                              className="rounded-md object-cover shrink-0"
+                              className="rounded-md object-contain shrink-0"
                             />
                           )}
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-gray-900 leading-tight">
                               {item.name}
                             </p>
-                            <p className="text-xs text-sakura-dark font-bold">
-                              ₱{item.price}
-                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <p className="text-xs text-sakura-dark font-bold">
+                                ₱{item.price}
+                              </p>
+                              {item.badge && (
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full leading-none">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -396,7 +541,7 @@ export default function Home() {
                             alt={item.name}
                             width={72}
                             height={72}
-                            className="rounded-lg object-cover shrink-0 mr-3"
+                            className="rounded-lg object-contain shrink-0 mr-3"
                           />
                         )}
                         <div className="flex-1 min-w-0 mr-3">
@@ -464,7 +609,12 @@ export default function Home() {
                 <h2 className="text-lg font-bold text-gray-900">
                   Build Your Bowl
                 </h2>
-                <p className="text-sm text-gray-500">{buildingRamen.name}</p>
+                <p className="text-sm text-gray-500 flex items-center gap-1.5">
+                  <span>{buildingRamen.name}</span>
+                  {buildingRamen.spicy ? (
+                    <SpicyRating level={buildingRamen.spicy} />
+                  ) : null}
+                </p>
               </div>
               <button
                 onClick={closeBowlBuilder}
@@ -810,6 +960,29 @@ export default function Home() {
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sakura-light focus:border-sakura resize-none"
                 />
 
+                <div className="bg-sakura-50 border border-sakura-light rounded-xl p-3 text-sm text-gray-700 leading-relaxed">
+                  <p className="font-semibold text-gray-800 mb-1">
+                    How to send your order
+                  </p>
+                  <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-600">
+                    <li>Tap the button below — we&apos;ll copy your order.</li>
+                    <li>Messenger will open in a new tab.</li>
+                    <li>
+                      <span className="font-semibold text-sakura-dark">
+                        Paste the order into the chat
+                      </span>{" "}
+                      and hit send.
+                    </li>
+                  </ol>
+                </div>
+
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
+                  <span className="font-semibold">Heads up:</span> item
+                  availability depends on current stock at the shop. We&apos;ll
+                  confirm everything with you in chat before finalizing your
+                  order.
+                </p>
+
                 <button
                   onClick={handleSendOrder}
                   className="w-full bg-[#0084ff] text-white font-bold py-3.5 rounded-full text-base hover:bg-[#0073e6] transition-colors flex items-center justify-center gap-2"
@@ -822,16 +995,22 @@ export default function Home() {
                   >
                     <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.907 1.453 5.497 3.727 7.191V22l3.414-1.876c.91.252 1.876.388 2.859.388 5.523 0 10-4.145 10-9.243S17.523 2 12 2zm1.07 12.449-2.545-2.714-4.97 2.714 5.467-5.804 2.609 2.714 4.906-2.714-5.467 5.804z" />
                   </svg>
-                  Send Order via Messenger
+                  Copy Order & Open Messenger
                 </button>
 
                 <p className="text-xs text-gray-400 text-center">
-                  This will open Facebook Messenger with your order summary.
                   Payment details can be discussed in chat.
                 </p>
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg max-w-[90vw] text-center">
+          {toast}
         </div>
       )}
 

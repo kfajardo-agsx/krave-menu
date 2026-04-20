@@ -8,9 +8,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "KRAVE Zamboanga — Menu & Order",
+  title: "KRAVE Order Helper",
   description:
-    "Browse our menu and send your order via Facebook Messenger. KRAVE Zamboanga — good food, easy ordering.",
+    "Browse the KRAVE Zamboanga menu and send your order via Facebook Messenger.",
 };
 
 export default function RootLayout({
