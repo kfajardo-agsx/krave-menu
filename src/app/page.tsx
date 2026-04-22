@@ -405,22 +405,44 @@ export default function Home() {
                             {item.name}
                           </h3>
                           {item.spicy ? <SpicyRating level={item.spicy} /> : null}
+                          {item.badge && (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full leading-none">
+                              {item.badge}
+                            </span>
+                          )}
                         </div>
                         {item.description && (
                           <p className="text-sm text-gray-500 mt-0.5">
                             {item.description}
                           </p>
                         )}
-                        {item.variants && item.variants.length > 0 && (
-                          <p className="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-1 gap-y-0.5">
-                            <span>Choose:</span>
-                            {item.variants.map((v, idx) => (
-                              <span key={v.id} className="inline-flex items-center gap-1">
-                                {idx > 0 && <span className="text-gray-400">or</span>}
-                                <span>{v.name}</span>
-                                {v.spicy ? <SpicyRating level={v.spicy} /> : null}
-                              </span>
-                            ))}
+                        {(() => {
+                          const choices =
+                            item.variants ?? item.optionGroups?.[0]?.options;
+                          if (!choices || choices.length === 0) return null;
+                          return (
+                            <p className="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                              <span>Choose:</span>
+                              {choices.map((v, idx) => (
+                                <span
+                                  key={v.id}
+                                  className="inline-flex items-center gap-1"
+                                >
+                                  {idx > 0 && (
+                                    <span className="text-gray-400">or</span>
+                                  )}
+                                  <span>{v.name}</span>
+                                  {v.spicy ? (
+                                    <SpicyRating level={v.spicy} />
+                                  ) : null}
+                                </span>
+                              ))}
+                            </p>
+                          );
+                        })()}
+                        {item.extras && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {item.extras}
                           </p>
                         )}
                         <p className="text-sakura-dark font-bold mt-1">

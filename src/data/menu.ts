@@ -42,6 +42,8 @@ export interface MenuItem {
   note?: string;
   /** Step-by-step assembly/prep instructions (shown in the builder modal) */
   assemblyInstructions?: string[];
+  /** Small note on the card under the Choose line (e.g. "Includes 1 egg and 2 premium toppings") */
+  extras?: string;
   /** If true, item is a teaser — not orderable, "Coming Soon" badge instead of price/Add */
   comingSoon?: boolean;
 }
@@ -74,7 +76,7 @@ export const menu: MenuCategory[] = [
           "Samyang ramyeon cooked to perfection with our homemade cheese sauce — creamy, cheesy, mouth-watering.",
         price: 150,
         image: "/images/cheesy%20stir-fry.png",
-        spicy: 3,
+        // spicy: 3,
         note: "For delivery: to make sure we are giving you the best, we send our stir fry partly deconstructed so your noodles don't get mushy",
         assemblyInstructions: [
           "Drop the noodles + cheese into the bowl (we add a splash of hot water to help melt the sauce)",
@@ -153,12 +155,22 @@ export const menu: MenuCategory[] = [
         ],
       },
       {
+        id: "ottogi-cheese-ramen",
+        name: "Ottogi Cheese Ramen",
+        description:
+          "Creamy, mild cheese soup ramen — our kid-friendly pick, no heat.",
+        price: 110,
+        image: "/images/cheeseramen.png",
+        badge: "Kids Choice",
+      },
+      {
         id: "loaded-ramyeon",
         name: "Loaded Ramyeon",
         description:
-          "Classic ramyeon soup bowl loaded with a fresh egg and your pick of toppings.",
+          "Your classic ramyeon, but loaded up with extra goodies!",
         price: 150,
         image: "/images/loaded%20ramyeon.png",
+        extras: "Includes 1 egg and 2 premium toppings",
         optionGroups: [
           {
             id: "base",
