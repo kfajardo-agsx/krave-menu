@@ -202,11 +202,6 @@ export default function Home() {
           }
         }
       }
-      if (bowl.ramen.includes) {
-        for (const inc of bowl.ramen.includes) {
-          lines.push(`  • Included: ${inc}`);
-        }
-      }
     });
     if (extrasItems.length > 0) {
       lines.push("");
@@ -479,6 +474,11 @@ export default function Home() {
                                 </span>
                               )}
                             </div>
+                            {item.description && (
+                              <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+                                {item.description}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -518,6 +518,37 @@ export default function Home() {
                 <div className="space-y-3">
                   {category.items.map((item) => {
                     const inOrder = extras.get(item.id);
+                    if (item.comingSoon) {
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between bg-sakura-50 rounded-xl p-4 border border-sakura-light"
+                        >
+                          {item.image && (
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              width={72}
+                              height={72}
+                              className="rounded-lg object-contain shrink-0 mr-3 opacity-70"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0 mr-3">
+                            <h3 className="font-semibold text-gray-900">
+                              {item.name}
+                            </h3>
+                            {item.description && (
+                              <p className="text-sm text-gray-500 mt-0.5">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+                          <span className="shrink-0 text-xs font-bold text-sakura-dark bg-white border border-sakura-light px-3 py-1.5 rounded-full">
+                            Coming Soon
+                          </span>
+                        </div>
+                      );
+                    }
                     return (
                       <div
                         key={item.id}
@@ -733,20 +764,6 @@ export default function Home() {
                 );
               })}
 
-              {/* Includes */}
-              {buildingRamen.includes && buildingRamen.includes.length > 0 && (
-                <div className="bg-sakura-50 border border-sakura-light rounded-lg px-3 py-2">
-                  <p className="text-xs font-semibold text-gray-700 mb-0.5">
-                    Included:
-                  </p>
-                  <ul className="text-xs text-gray-600 list-disc list-inside">
-                    {buildingRamen.includes.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {/* Delivery note */}
               {buildingRamen.note && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
@@ -868,15 +885,6 @@ export default function Home() {
                           </p>
                         );
                       })}
-                      {bowl.ramen.includes?.map((inc, idx) => (
-                        <p
-                          key={`inc-${idx}`}
-                          className="text-sm text-gray-600 pl-3"
-                        >
-                          <span className="text-gray-400">Included:</span>{" "}
-                          {inc}
-                        </p>
-                      ))}
                       <p className="text-sm font-semibold text-sakura-dark text-right">
                         ₱{bowl.ramen.price}
                       </p>

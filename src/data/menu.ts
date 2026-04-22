@@ -38,12 +38,12 @@ export interface MenuItem {
   variants?: MenuVariant[];
   /** Multi-group required selections (e.g. base + normal topping + premium topping) */
   optionGroups?: MenuOptionGroup[];
-  /** Things automatically included in the item (e.g. "1 fresh egg") */
-  includes?: string[];
   /** Shown below the price, highlighted — used for delivery caveats etc. */
   note?: string;
   /** Step-by-step assembly/prep instructions (shown in the builder modal) */
   assemblyInstructions?: string[];
+  /** If true, item is a teaser — not orderable, "Coming Soon" badge instead of price/Add */
+  comingSoon?: boolean;
 }
 
 export interface MenuCategory {
@@ -73,6 +73,7 @@ export const menu: MenuCategory[] = [
         description:
           "Samyang ramyeon cooked to perfection with our homemade cheese sauce — creamy, cheesy, mouth-watering.",
         price: 150,
+        image: "/images/cheesy%20stir-fry.png",
         spicy: 3,
         note: "For delivery: to make sure we are giving you the best, we send our stir fry partly deconstructed so your noodles don't get mushy",
         assemblyInstructions: [
@@ -101,6 +102,7 @@ export const menu: MenuCategory[] = [
         description:
           "Ottogi stir-fry ramen loaded with our homemade cheese sauce for a creamier, even cheesier bite.",
         price: 125,
+        image: "/images/cheesy%20stir-fry.png",
         note: "For delivery: to make sure we are giving you the best, we send our stir fry partly deconstructed so your noodles don't get mushy",
         assemblyInstructions: [
           "Drop the noodles + cheese into the bowl (we add a splash of hot water to help melt the sauce)",
@@ -128,6 +130,7 @@ export const menu: MenuCategory[] = [
         description:
           "Classic Korean soup ramyeon — rich broth, comforting bowl. Pick your flavor.",
         price: 95,
+        image: "/images/ramyeon.png",
         variants: [
           {
             id: "shin-ramyun",
@@ -155,7 +158,7 @@ export const menu: MenuCategory[] = [
         description:
           "Classic ramyeon soup bowl loaded with a fresh egg and your pick of toppings.",
         price: 150,
-        includes: ["1 fresh egg"],
+        image: "/images/loaded%20ramyeon.png",
         optionGroups: [
           {
             id: "base",
@@ -182,8 +185,20 @@ export const menu: MenuCategory[] = [
             ],
           },
           {
+            id: "included-egg",
+            name: "Fresh Egg (included)",
+            options: [
+              {
+                id: "fresh-egg",
+                name: "Fresh Egg",
+                description: "1 pc",
+                image: "/images/egg.png",
+              },
+            ],
+          },
+          {
             id: "normal-topping",
-            name: "Normal topping (pick one)",
+            name: "Topping 1 (pick one)",
             defaultOptionId: "crabstick",
             options: [
               {
@@ -220,7 +235,7 @@ export const menu: MenuCategory[] = [
           },
           {
             id: "premium-topping",
-            name: "Premium topping (pick one)",
+            name: "Topping 2 (pick one)",
             options: [
               {
                 id: "hello-kitty-fishcake",
@@ -259,6 +274,31 @@ export const menu: MenuCategory[] = [
     ],
   },
   {
+    id: "rice-meals",
+    name: "Rice Meals",
+    description: "Korean rice bowls and kits. Coming soon!",
+    items: [
+      {
+        id: "mayak-egg-cupbap",
+        name: "Mayak Egg Cupbap",
+        description:
+          "Soy-marinated 'mayak' eggs over hot rice — savory, sweet, and impossibly addicting.",
+        price: 0,
+        image: "/images/mayak%20egg%20with%20rice.png",
+        comingSoon: true,
+      },
+      {
+        id: "jumeokbap-diy-kit",
+        name: "Jumeokbap DIY Kit",
+        description:
+          "Korean rice balls, your way — a ready-to-assemble kit you can enjoy three different ways.",
+        price: 0,
+        image: "/images/jumeokbap.png",
+        comingSoon: true,
+      },
+    ],
+  },
+  {
     id: "sides",
     name: "Sides",
     items: [
@@ -275,7 +315,7 @@ export const menu: MenuCategory[] = [
     id: "drinks",
     name: "Drinks",
     description:
-      "Pouch drinks (Baba, IceTalk, Cantabile) are meant to be poured over ice — they're intentionally concentrated and sweeter so the flavor balances perfectly as the ice melts.",
+      "Pouch drinks (Baba, IceTalk, Cantabile) come with a cup of ice — just pour and sip. They're concentrated on purpose so the flavor balances perfectly as the ice melts.",
     items: [
       {
         id: "coke-290ml",
@@ -287,79 +327,79 @@ export const menu: MenuCategory[] = [
       {
         id: "baba-americano",
         name: "Baba Americano",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/baba%20americano.png",
       },
       {
         id: "baba-apple-mango-ade",
         name: "Baba Apple Mango Ade Zero",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/baba%20apple%20mango%20ade%20zero.png",
         badge: "0 CAL",
       },
       {
         id: "baba-caramel-macchiato",
         name: "Baba Caramel Macchiato",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/baba%20caramel%20machiatto.png",
       },
       {
         id: "baba-hazelnut",
         name: "Baba Hazelnut",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/baba%20hazelnut.png",
       },
       {
         id: "cantabile-strawberry",
         name: "Cantabile Strawberry Ade",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/cantabile%20strawberry.png",
       },
       {
         id: "icetalk-blue-lemonade",
         name: "IceTalk Blue Lemonade",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/icetalk%20blue%20lemonade.png",
       },
       {
         id: "icetalk-blueberry",
         name: "IceTalk Blueberry Ade",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/icetalk%20blueberry.png",
       },
       {
         id: "icetalk-green-grape",
         name: "IceTalk Green Grape",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/icetalk%20greengrape.png",
       },
       {
         id: "icetalk-kiwi",
         name: "IceTalk Kiwi Ade",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/icetalk%20kiwi.png",
       },
       {
         id: "icetalk-peach",
         name: "IceTalk Peach Icetea",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/icetalk%20peach.png",
       },
       {
         id: "icetalk-pomegranate",
         name: "IceTalk Pomegranate",
-        description: "",
-        price: 50,
+        description: "with cup of ice",
+        price: 55,
         image: "/images/icetalk%20pomegranate.png",
       },
     ],
