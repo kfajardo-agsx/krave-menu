@@ -1,3 +1,29 @@
+export interface MenuVariant {
+  id: string;
+  name: string;
+  image?: string;
+  /** Heat level for this variant: 0 = not spicy, 1 = mild, 2 = spicy, 3 = very spicy */
+  spicy?: 0 | 1 | 2 | 3;
+}
+
+export interface MenuOption {
+  id: string;
+  name: string;
+  image?: string;
+  spicy?: 0 | 1 | 2 | 3;
+  /** Optional small subtitle on the option card (e.g. "2 pcs") */
+  description?: string;
+}
+
+export interface MenuOptionGroup {
+  id: string;
+  /** Section heading shown in the modal (e.g. "Normal topping") */
+  name: string;
+  options: MenuOption[];
+  /** ID of the option pre-selected by default; if omitted, first option is used */
+  defaultOptionId?: string;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -8,6 +34,16 @@ export interface MenuItem {
   spicy?: 0 | 1 | 2 | 3;
   /** Small highlight badge shown next to the item (e.g. "0 CAL") */
   badge?: string;
+  /** If present, the customer must pick one of these variants when ordering */
+  variants?: MenuVariant[];
+  /** Multi-group required selections (e.g. base + normal topping + premium topping) */
+  optionGroups?: MenuOptionGroup[];
+  /** Things automatically included in the item (e.g. "1 fresh egg") */
+  includes?: string[];
+  /** Shown below the price, highlighted — used for delivery caveats etc. */
+  note?: string;
+  /** Step-by-step assembly/prep instructions (shown in the builder modal) */
+  assemblyInstructions?: string[];
 }
 
 export interface MenuCategory {
@@ -22,8 +58,8 @@ export interface MenuCategory {
   items: MenuItem[];
 }
 
-export const APP_NAME = "KRAVE Order Helper";
-export const STORE_NAME = "KRAVE Zamboanga";
+export const APP_NAME = "KRAVE Delivery Order Helper";
+export const STORE_NAME = "KRAVE ramyeon❀bingsu";
 export const FACEBOOK_PAGE = "kravezamboanga";
 
 export const menu: MenuCategory[] = [
@@ -32,186 +68,193 @@ export const menu: MenuCategory[] = [
     name: "Ramen",
     items: [
       {
-        id: "shin-ramyun",
-        name: "Shin Ramyun",
-        description: "Classic Korean spicy noodle soup",
-        price: 65,
-        image: "/images/shin%20ramyun.png",
-        spicy: 2,
-      },
-      {
-        id: "jin-ramen-mild",
-        name: "Jin Ramen Mild",
-        description: "Smooth and savory mild ramen",
-        price: 55,
-        image: "/images/jin%20ramen%20mild.png",
-        spicy: 1,
-      },
-      {
-        id: "jin-ramen-spicy",
-        name: "Jin Ramen Spicy",
-        description: "Bold and spicy ramen",
-        price: 55,
-        image: "/images/jin%20ramen%20spicy.png",
-        spicy: 2,
-      },
-      {
-        id: "ottogi-cheese-soup",
-        name: "Ottogi Cheese Ramen",
-        description: "Creamy cheese ramen soup",
-        price: 85,
-        image: "/images/ottogi%20cheese%20ramen.png",
-        spicy: 0,
-      },
-      {
-        id: "ottogi-cheese",
-        name: "Ottogi Stir Fry Cheese Ramen",
-        description: "Cheesy stir-fried noodles",
-        price: 85,
-        image: "/images/ottogi%20stirfry%20cheese%20ramen.png",
-        spicy: 0,
-      },
-      {
-        id: "ottogi-cheese-spicy",
-        name: "Ottogi Stir Fry Cheese Ramen Spicy",
-        description: "Spicy cheesy stir-fried noodles",
-        price: 85,
-        image: "/images/ottogi%20stirfry%20cheese%20ramen%20spicy.png",
-        spicy: 2,
-      },
-      {
-        id: "samyang-quattro",
-        name: "Samyang Quattro Cheese",
-        description: "Four-cheese flavored fire noodles",
-        price: 110,
-        image: "/images/samyang%20quattro%20cheese.png",
+        id: "samyang-cheesy-stirfry",
+        name: "Samyang Cheesy Stir-Fry",
+        description:
+          "Samyang ramyeon cooked to perfection with our homemade cheese sauce — creamy, cheesy, mouth-watering.",
+        price: 150,
         spicy: 3,
+        note: "For delivery: to make sure we are giving you the best, we send our stir fry partly deconstructed so your noodles don't get mushy",
+        assemblyInstructions: [
+          "Drop the noodles + cheese into the bowl (we add a splash of hot water to help melt the sauce)",
+          "Pour in the seasoning packets (if you want it milder, skip part of the heat packet)",
+          "Mix and enjoy!",
+        ],
+        variants: [
+          {
+            id: "quattro",
+            name: "Quattro Cheese",
+            image: "/images/samyang%20quattro%20cheese.png",
+            spicy: 3,
+          },
+          {
+            id: "carbonara",
+            name: "Carbonara",
+            image: "/images/samyang%20carbonara.png",
+            spicy: 3,
+          },
+        ],
       },
       {
-        id: "samyang-carbonara",
-        name: "Samyang Buldak Carbonara",
-        description: "Creamy carbonara fire noodles",
-        price: 110,
-        image: "/images/samyang%20carbonara.png",
-        spicy: 3,
-      },
-    ],
-  },
-  {
-    id: "cook-it",
-    name: "Cook It?",
-    description: "Want us to cook your ramen for you?",
-    items: [
-      {
-        id: "cook-it",
-        name: "Cook My Ramen",
-        description: "We'll cook it fresh for you",
-        price: 20,
-      },
-    ],
-  },
-  {
-    id: "toppings",
-    name: "Toppings",
-    description: "Add extras to your ramen",
-    items: [
-      {
-        id: "cheese-slice",
-        name: "Cheese Slice",
-        description: "",
-        price: 15,
-        image: "/images/cheese%20slice.png",
+        id: "ottogi-extra-cheesy-stirfry",
+        name: "Ottogi Extra Cheesy Stir-Fry",
+        description:
+          "Ottogi stir-fry ramen loaded with our homemade cheese sauce for a creamier, even cheesier bite.",
+        price: 125,
+        note: "For delivery: to make sure we are giving you the best, we send our stir fry partly deconstructed so your noodles don't get mushy",
+        assemblyInstructions: [
+          "Drop the noodles + cheese into the bowl (we add a splash of hot water to help melt the sauce)",
+          "Pour in the seasoning packets (if you want it milder, skip part of the heat packet)",
+          "Mix and enjoy!",
+        ],
+        variants: [
+          {
+            id: "ottogi-original",
+            name: "Original",
+            image: "/images/ottogi%20stirfry%20cheese%20ramen.png",
+            spicy: 0,
+          },
+          {
+            id: "ottogi-spicy",
+            name: "Spicy",
+            image: "/images/ottogi%20stirfry%20cheese%20ramen%20spicy.png",
+            spicy: 2,
+          },
+        ],
       },
       {
-        id: "crabstick",
-        name: "Crabstick",
-        description: "",
-        price: 15,
-        image: "/images/crabstick.png",
+        id: "classic-ramyeon",
+        name: "Classic Ramyeon",
+        description:
+          "Classic Korean soup ramyeon — rich broth, comforting bowl. Pick your flavor.",
+        price: 95,
+        variants: [
+          {
+            id: "shin-ramyun",
+            name: "Shin Ramyun",
+            image: "/images/shin%20ramyun.png",
+            spicy: 2,
+          },
+          {
+            id: "jin-ramen-mild",
+            name: "Jin Ramen Mild",
+            image: "/images/jin%20ramen%20mild.png",
+            spicy: 1,
+          },
+          {
+            id: "jin-ramen-spicy",
+            name: "Jin Ramen Spicy",
+            image: "/images/jin%20ramen%20spicy.png",
+            spicy: 2,
+          },
+        ],
       },
       {
-        id: "fresh-egg",
-        name: "Fresh Egg",
-        description: "",
-        price: 15,
-        image: "/images/egg.png",
-      },
-      {
-        id: "fishcake-triangles",
-        name: "Fishcake Triangles",
-        description: "",
-        price: 15,
-        image: "/images/fishcake%20triangles.png",
-      },
-      {
-        id: "fish-cheese-tofu",
-        name: "Fish Cheese Tofu",
-        description: "",
-        price: 20,
-        image: "/images/fish%20cheese%20tofu.png",
-      },
-      {
-        id: "golden-cheese-ball",
-        name: "Golden Cheese Ball",
-        description: "",
-        price: 20,
-        image: "/images/golden%20cheese%20ball.png",
-      },
-      {
-        id: "kimchi",
-        name: "Kimchi (1oz)",
-        description: "",
-        price: 20,
-        image: "/images/kimchi.png",
-      },
-      {
-        id: "lobster-ball",
-        name: "Lobster Ball",
-        description: "",
-        price: 20,
-        image: "/images/lobster%20ball.png",
-      },
-      {
-        id: "crab-claw",
-        name: "Crab Claw",
-        description: "",
-        price: 25,
-        image: "/images/crab%20claw.png",
-      },
-      {
-        id: "hello-kitty-fishcake",
-        name: "Hello Kitty Fishcake (2pcs)",
-        description: "",
-        price: 25,
-        image: "/images/hello%20kitty%20fishcake.png",
-      },
-      {
-        id: "lobster-stick",
-        name: "Lobster Stick",
-        description: "",
-        price: 25,
-        image: "/images/lobster%20stick.png",
-      },
-      {
-        id: "naruto-maki",
-        name: "Naruto Maki (2pcs)",
-        description: "",
-        price: 25,
-        image: "/images/narutomaki.png",
-      },
-      {
-        id: "scallop-bun",
-        name: "Scallop Bun",
-        description: "",
-        price: 25,
-        image: "/images/scallop%20bun.png",
-      },
-      {
-        id: "seafood-bun",
-        name: "Seafood Bun",
-        description: "",
-        price: 25,
-        image: "/images/seafood%20bun.png",
+        id: "loaded-ramyeon",
+        name: "Loaded Ramyeon",
+        description:
+          "Classic ramyeon soup bowl loaded with a fresh egg and your pick of toppings.",
+        price: 150,
+        includes: ["1 fresh egg"],
+        optionGroups: [
+          {
+            id: "base",
+            name: "Choose your base",
+            options: [
+              {
+                id: "shin-ramyun",
+                name: "Shin Ramyun",
+                image: "/images/shin%20ramyun.png",
+                spicy: 2,
+              },
+              {
+                id: "jin-ramen-mild",
+                name: "Jin Ramen Mild",
+                image: "/images/jin%20ramen%20mild.png",
+                spicy: 1,
+              },
+              {
+                id: "jin-ramen-spicy",
+                name: "Jin Ramen Spicy",
+                image: "/images/jin%20ramen%20spicy.png",
+                spicy: 2,
+              },
+            ],
+          },
+          {
+            id: "normal-topping",
+            name: "Normal topping (pick one)",
+            defaultOptionId: "crabstick",
+            options: [
+              {
+                id: "crabstick",
+                name: "Crabstick",
+                description: "1 pc",
+                image: "/images/crabstick.png",
+              },
+              {
+                id: "fishcake-triangles",
+                name: "Fishcake Triangles",
+                description: "4 pcs",
+                image: "/images/fishcake%20triangles.png",
+              },
+              {
+                id: "lobster-ball",
+                name: "Lobster Ball",
+                description: "1 pc",
+                image: "/images/lobster%20ball.png",
+              },
+              {
+                id: "fish-cheese-tofu",
+                name: "Fish Cheese Tofu",
+                description: "1 pc",
+                image: "/images/fish%20cheese%20tofu.png",
+              },
+              {
+                id: "golden-cheese-ball",
+                name: "Golden Cheese Ball",
+                description: "1 pc",
+                image: "/images/golden%20cheese%20ball.png",
+              },
+            ],
+          },
+          {
+            id: "premium-topping",
+            name: "Premium topping (pick one)",
+            options: [
+              {
+                id: "hello-kitty-fishcake",
+                name: "Hello Kitty Fishcake",
+                description: "2 pcs",
+                image: "/images/hello%20kitty%20fishcake.png",
+              },
+              {
+                id: "narutomaki",
+                name: "Narutomaki",
+                description: "2 pcs",
+                image: "/images/narutomaki.png",
+              },
+              {
+                id: "crab-claw",
+                name: "Crab Claw",
+                description: "1 pc",
+                image: "/images/crab%20claw.png",
+              },
+              {
+                id: "lobster-stick",
+                name: "Lobster Stick",
+                description: "1 pc",
+                image: "/images/lobster%20stick.png",
+              },
+              {
+                id: "seafood-bun",
+                name: "Seafood Bun",
+                description: "1 pc",
+                image: "/images/seafood%20bun.png",
+              },
+            ],
+          },
+        ],
       },
     ],
   },

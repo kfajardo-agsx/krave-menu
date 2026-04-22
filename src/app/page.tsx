@@ -3,20 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { menu, APP_NAME, STORE_NAME, FACEBOOK_PAGE } from "@/data/menu";
-import type { MenuItem } from "@/data/menu";
+import type { MenuItem, MenuVariant, MenuOption } from "@/data/menu";
 
 /* ── Types ── */
-
-interface ToppingSelection {
-  item: MenuItem;
-  qty: number;
-}
 
 interface Bowl {
   id: string;
   ramen: MenuItem;
-  toppings: ToppingSelection[];
-  cookIt: boolean;
+  variant: MenuVariant | null;
+  /** Selected option per optionGroup.id */
+  options: Record<string, MenuOption>;
 }
 
 interface OrderItem {
@@ -54,18 +50,14 @@ export default function Home() {
 
   /* Bowl builder state */
   const [buildingRamen, setBuildingRamen] = useState<MenuItem | null>(null);
-  const [buildingToppings, setBuildingToppings] = useState<Map<string, number>>(
-    new Map()
+  const [buildingVariant, setBuildingVariant] = useState<MenuVariant | null>(
+    null
   );
-  const [buildingCookIt, setBuildingCookIt] = useState(false);
+  const [buildingOptions, setBuildingOptions] = useState<
+    Record<string, MenuOption>
+  >({});
 
-  /* Lookup categories */
-  const toppingsCategory = menu.find((c) => c.id === "toppings");
-  const cookItCategory = menu.find((c) => c.id === "cook-it");
-  const cookItItem = cookItCategory?.items[0];
-  const mainCategories = menu.filter(
-    (c) => c.id !== "toppings" && c.id !== "cook-it"
-  );
+  const mainCategories = menu;
 
   /* Tabbed nav — scrollspy + click-to-scroll */
   const [activeCategory, setActiveCategory] = useState<string>(
@@ -119,48 +111,32 @@ export default function Home() {
 
   function startBowl(ramen: MenuItem) {
     setBuildingRamen(ramen);
-    setBuildingToppings(new Map());
-    setBuildingCookIt(false);
+    setBuildingVariant(ramen.variants?.[0] ?? null);
+    const initialOptions: Record<string, MenuOption> = {};
+    if (ramen.optionGroups) {
+      for (const group of ramen.optionGroups) {
+        const def =
+          group.options.find((o) => o.id === group.defaultOptionId) ??
+          group.options[0];
+        if (def) initialOptions[group.id] = def;
+      }
+    }
+    setBuildingOptions(initialOptions);
   }
 
   function closeBowlBuilder() {
     setBuildingRamen(null);
   }
 
-  function addBuildingTopping(id: string) {
-    setBuildingToppings((prev) => {
-      const next = new Map(prev);
-      next.set(id, (next.get(id) || 0) + 1);
-      return next;
-    });
-  }
-
-  function removeBuildingTopping(id: string) {
-    setBuildingToppings((prev) => {
-      const next = new Map(prev);
-      const cur = next.get(id) || 0;
-      if (cur <= 1) next.delete(id);
-      else next.set(id, cur - 1);
-      return next;
-    });
-  }
-
   function confirmBowl() {
     if (!buildingRamen) return;
-    const toppings: ToppingSelection[] = [];
-    if (toppingsCategory) {
-      for (const [id, qty] of buildingToppings) {
-        const item = toppingsCategory.items.find((t) => t.id === id);
-        if (item && qty > 0) toppings.push({ item, qty });
-      }
-    }
     setBowls((prev) => [
       ...prev,
       {
         id: `bowl-${Date.now()}`,
         ramen: buildingRamen,
-        toppings,
-        cookIt: buildingCookIt,
+        variant: buildingVariant,
+        options: buildingOptions,
       },
     ]);
     closeBowlBuilder();
@@ -195,14 +171,7 @@ export default function Home() {
 
   /* ── Totals ── */
 
-  function bowlPrice(bowl: Bowl): number {
-    let total = bowl.ramen.price;
-    for (const t of bowl.toppings) total += t.item.price * t.qty;
-    if (bowl.cookIt && cookItItem) total += cookItItem.price;
-    return total;
-  }
-
-  const bowlsTotal = bowls.reduce((sum, b) => sum + bowlPrice(b), 0);
+  const bowlsTotal = bowls.reduce((sum, b) => sum + b.ramen.price, 0);
   const extrasItems = Array.from(extras.values());
   const extrasTotal = extrasItems.reduce(
     (sum, o) => sum + o.item.price * o.qty,
@@ -213,30 +182,31 @@ export default function Home() {
     bowls.length + extrasItems.reduce((sum, o) => sum + o.qty, 0);
 
   /* Bowl builder running total */
-  const buildingTotal = buildingRamen
-    ? buildingRamen.price +
-      Array.from(buildingToppings.entries()).reduce((sum, [id, qty]) => {
-        const item = toppingsCategory?.items.find((t) => t.id === id);
-        return sum + (item ? item.price * qty : 0);
-      }, 0) +
-      (buildingCookIt && cookItItem ? cookItItem.price : 0)
-    : 0;
+  const buildingTotal = buildingRamen?.price ?? 0;
 
   /* ── Messenger message ── */
 
   function buildOrderMessage(): string {
     const lines = [`Hi! I'd like to order from ${STORE_NAME}:`, ""];
     bowls.forEach((bowl, i) => {
-      lines.push(`Bowl ${i + 1}: ${bowl.ramen.name} — ₱${bowl.ramen.price}`);
-      for (const t of bowl.toppings) {
-        lines.push(
-          `  + ${t.item.name}${t.qty > 1 ? ` x${t.qty}` : ""} — ₱${t.item.price * t.qty}`
-        );
+      const ramenLabel = bowl.variant
+        ? `${bowl.ramen.name} (${bowl.variant.name})`
+        : bowl.ramen.name;
+      lines.push(`Bowl ${i + 1}: ${ramenLabel} — ₱${bowl.ramen.price}`);
+      if (bowl.ramen.optionGroups) {
+        for (const group of bowl.ramen.optionGroups) {
+          const picked = bowl.options[group.id];
+          if (picked) {
+            const extra = picked.description ? ` (${picked.description})` : "";
+            lines.push(`  • ${group.name}: ${picked.name}${extra}`);
+          }
+        }
       }
-      if (bowl.cookIt && cookItItem) {
-        lines.push(`  + Cook My Ramen — ₱${cookItItem.price}`);
+      if (bowl.ramen.includes) {
+        for (const inc of bowl.ramen.includes) {
+          lines.push(`  • Included: ${inc}`);
+        }
       }
-      lines.push(`  Subtotal: ₱${bowlPrice(bowl)}`);
     });
     if (extrasItems.length > 0) {
       lines.push("");
@@ -349,6 +319,12 @@ export default function Home() {
 
       {/* Menu */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed mb-6">
+          <span className="font-semibold">Heads up:</span> availability depends
+          on current stock at the shop — we also serve walk-ins, so we&apos;ll
+          confirm everything with you in chat before finalizing your order.
+        </p>
+
         {mainCategories.map((category) => {
           const isRamen = category.id === "ramen";
           const isCompact = category.id === "drinks";
@@ -438,6 +414,18 @@ export default function Home() {
                         {item.description && (
                           <p className="text-sm text-gray-500 mt-0.5">
                             {item.description}
+                          </p>
+                        )}
+                        {item.variants && item.variants.length > 0 && (
+                          <p className="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                            <span>Choose:</span>
+                            {item.variants.map((v, idx) => (
+                              <span key={v.id} className="inline-flex items-center gap-1">
+                                {idx > 0 && <span className="text-gray-400">or</span>}
+                                <span>{v.name}</span>
+                                {v.spicy ? <SpicyRating level={v.spicy} /> : null}
+                              </span>
+                            ))}
                           </p>
                         )}
                         <p className="text-sakura-dark font-bold mt-1">
@@ -610,10 +598,14 @@ export default function Home() {
                   Build Your Bowl
                 </h2>
                 <p className="text-sm text-gray-500 flex items-center gap-1.5">
-                  <span>{buildingRamen.name}</span>
-                  {buildingRamen.spicy ? (
-                    <SpicyRating level={buildingRamen.spicy} />
-                  ) : null}
+                  <span>
+                    {buildingRamen.name}
+                    {buildingVariant ? ` (${buildingVariant.name})` : ""}
+                  </span>
+                  {(() => {
+                    const s = buildingVariant?.spicy ?? buildingRamen.spicy;
+                    return s ? <SpicyRating level={s} /> : null;
+                  })()}
                 </p>
               </div>
               <button
@@ -626,138 +618,157 @@ export default function Home() {
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-              {/* Cook it option */}
-              {cookItItem && (
+              {/* Variant picker */}
+              {buildingRamen.variants && buildingRamen.variants.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-gray-700 mb-2">
-                    Want us to cook it?
+                    Choose your flavor
                   </h3>
-                  <button
-                    onClick={() => setBuildingCookIt((v) => !v)}
-                    className={`w-full flex items-center justify-between rounded-lg px-4 py-3 border transition-colors ${
-                      buildingCookIt
-                        ? "border-sakura bg-sakura-50"
-                        : "border-gray-100 bg-white"
+                  <div
+                    className={`grid gap-2 ${
+                      buildingRamen.variants.length >= 3
+                        ? "grid-cols-3"
+                        : "grid-cols-2"
                     }`}
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {cookItItem.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {cookItItem.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-sakura-dark">
-                        +₱{cookItItem.price}
-                      </span>
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          buildingCookIt
-                            ? "bg-sakura border-sakura"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {buildingCookIt && (
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 12 12"
-                            fill="none"
-                          >
-                            <path
-                              d="M2.5 6L5 8.5L9.5 3.5"
-                              stroke="white"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              )}
-
-              {/* Toppings */}
-              {toppingsCategory && toppingsCategory.items.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-bold text-gray-700 mb-2">
-                    Add Toppings
-                  </h3>
-                  <div className="space-y-2">
-                    {toppingsCategory.items.map((topping) => {
-                      const qty = buildingToppings.get(topping.id) || 0;
+                    {buildingRamen.variants.map((variant) => {
+                      const selected = buildingVariant?.id === variant.id;
                       return (
-                        <div
-                          key={topping.id}
-                          className={`flex items-center justify-between rounded-lg px-3 py-2.5 border transition-colors ${
-                            qty > 0
+                        <button
+                          key={variant.id}
+                          onClick={() => setBuildingVariant(variant)}
+                          className={`flex flex-col items-center gap-2 rounded-lg px-3 py-3 border transition-colors ${
+                            selected
                               ? "border-sakura bg-sakura-50"
                               : "border-gray-100 bg-white"
                           }`}
                         >
-                          <div className="flex items-center gap-2 min-w-0 mr-2">
-                            {topping.image && (
-                              <Image
-                                src={topping.image}
-                                alt={topping.name}
-                                width={36}
-                                height={36}
-                                className="rounded-md object-cover shrink-0"
-                              />
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 leading-tight">
-                                {topping.name}
-                              </p>
-                              <p className="text-xs text-sakura-dark font-bold">
-                                +₱{topping.price}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {qty > 0 ? (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    removeBuildingTopping(topping.id)
-                                  }
-                                  className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                >
-                                  -
-                                </button>
-                                <span className="w-5 text-center font-semibold text-xs">
-                                  {qty}
-                                </span>
-                                <button
-                                  onClick={() =>
-                                    addBuildingTopping(topping.id)
-                                  }
-                                  className="w-6 h-6 rounded-full bg-sakura text-white font-bold text-sm flex items-center justify-center hover:bg-sakura-dark transition-colors"
-                                >
-                                  +
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() =>
-                                  addBuildingTopping(topping.id)
-                                }
-                                className="px-3 py-1 bg-sakura text-white text-xs font-semibold rounded-full hover:bg-sakura-dark transition-colors"
-                              >
-                                +
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                          {variant.image && (
+                            <Image
+                              src={variant.image}
+                              alt={variant.name}
+                              width={72}
+                              height={72}
+                              className="rounded-md object-cover"
+                            />
+                          )}
+                          <span
+                            className={`text-sm font-semibold text-center flex items-center gap-1 flex-wrap justify-center ${
+                              selected ? "text-sakura-dark" : "text-gray-800"
+                            }`}
+                          >
+                            <span>{variant.name}</span>
+                            {variant.spicy ? (
+                              <SpicyRating level={variant.spicy} />
+                            ) : null}
+                          </span>
+                        </button>
                       );
                     })}
                   </div>
                 </div>
               )}
+
+              {/* Option groups (multi-pick) */}
+              {buildingRamen.optionGroups?.map((group) => {
+                const selectedId = buildingOptions[group.id]?.id;
+                return (
+                  <div key={group.id}>
+                    <h3 className="text-sm font-bold text-gray-700 mb-2">
+                      {group.name}
+                    </h3>
+                    <div
+                      className={`grid gap-2 ${
+                        group.options.length >= 3
+                          ? "grid-cols-3"
+                          : "grid-cols-2"
+                      }`}
+                    >
+                      {group.options.map((option) => {
+                        const selected = selectedId === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() =>
+                              setBuildingOptions((prev) => ({
+                                ...prev,
+                                [group.id]: option,
+                              }))
+                            }
+                            className={`flex flex-col items-center gap-2 rounded-lg px-2 py-3 border transition-colors ${
+                              selected
+                                ? "border-sakura bg-sakura-50"
+                                : "border-gray-100 bg-white"
+                            }`}
+                          >
+                            {option.image && (
+                              <Image
+                                src={option.image}
+                                alt={option.name}
+                                width={64}
+                                height={64}
+                                className="rounded-md object-cover"
+                              />
+                            )}
+                            <span
+                              className={`text-xs font-semibold text-center flex items-center gap-1 flex-wrap justify-center leading-tight ${
+                                selected ? "text-sakura-dark" : "text-gray-800"
+                              }`}
+                            >
+                              <span>{option.name}</span>
+                              {option.spicy ? (
+                                <SpicyRating level={option.spicy} />
+                              ) : null}
+                            </span>
+                            {option.description && (
+                              <span className="text-[10px] text-gray-500 leading-none">
+                                {option.description}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Includes */}
+              {buildingRamen.includes && buildingRamen.includes.length > 0 && (
+                <div className="bg-sakura-50 border border-sakura-light rounded-lg px-3 py-2">
+                  <p className="text-xs font-semibold text-gray-700 mb-0.5">
+                    Included:
+                  </p>
+                  <ul className="text-xs text-gray-600 list-disc list-inside">
+                    {buildingRamen.includes.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Delivery note */}
+              {buildingRamen.note && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
+                  {buildingRamen.note}
+                </p>
+              )}
+
+              {/* Assembly instructions */}
+              {buildingRamen.assemblyInstructions &&
+                buildingRamen.assemblyInstructions.length > 0 && (
+                  <div className="bg-sakura-50 border border-sakura-light rounded-lg px-3 py-2.5">
+                    <p className="text-xs font-semibold text-gray-700 mb-1.5">
+                      Easy to assemble — we include a note in the bag:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-gray-600 leading-relaxed">
+                      {buildingRamen.assemblyInstructions.map((step, i) => (
+                        <li key={i}>{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
             </div>
 
             {/* Confirm button */}
@@ -830,6 +841,7 @@ export default function Home() {
                         <div>
                           <p className="font-semibold text-gray-900">
                             Bowl {i + 1}: {bowl.ramen.name}
+                            {bowl.variant ? ` (${bowl.variant.name})` : ""}
                           </p>
                           <p className="text-xs text-gray-500">
                             ₱{bowl.ramen.price}
@@ -842,47 +854,31 @@ export default function Home() {
                           Remove
                         </button>
                       </div>
-                      {bowl.toppings.map((t) => (
+                      {bowl.ramen.optionGroups?.map((group) => {
+                        const picked = bowl.options[group.id];
+                        if (!picked) return null;
+                        return (
+                          <p
+                            key={group.id}
+                            className="text-sm text-gray-600 pl-3"
+                          >
+                            <span className="text-gray-400">{group.name}:</span>{" "}
+                            {picked.name}
+                            {picked.description ? ` (${picked.description})` : ""}
+                          </p>
+                        );
+                      })}
+                      {bowl.ramen.includes?.map((inc, idx) => (
                         <p
-                          key={t.item.id}
+                          key={`inc-${idx}`}
                           className="text-sm text-gray-600 pl-3"
                         >
-                          + {t.item.name}
-                          {t.qty > 1 ? ` x${t.qty}` : ""}{" "}
-                          <span className="text-gray-400">
-                            ₱{t.item.price * t.qty}
-                          </span>
+                          <span className="text-gray-400">Included:</span>{" "}
+                          {inc}
                         </p>
                       ))}
-                      {bowl.cookIt && cookItItem ? (
-                        <p className="text-sm text-gray-600 pl-3">
-                          + {cookItItem.name}{" "}
-                          <span className="text-gray-400">
-                            ₱{cookItItem.price}
-                          </span>
-                        </p>
-                      ) : (
-                        <div className="mt-1 space-y-1.5">
-                          <p className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-1.5">
-                            Not cooked — your ramen will be served uncooked
-                          </p>
-                          <button
-                            onClick={() =>
-                              setBowls((prev) =>
-                                prev.map((b) =>
-                                  b.id === bowl.id ? { ...b, cookIt: true } : b
-                                )
-                              )
-                            }
-                            className="flex items-center gap-2 text-xs text-gray-600 px-3 py-1.5 hover:text-sakura-dark transition-colors"
-                          >
-                            <div className="w-4 h-4 rounded border-2 border-gray-300 shrink-0" />
-                            <span>Add Cook My Ramen (+₱{cookItItem?.price})</span>
-                          </button>
-                        </div>
-                      )}
                       <p className="text-sm font-semibold text-sakura-dark text-right">
-                        ₱{bowlPrice(bowl)}
+                        ₱{bowl.ramen.price}
                       </p>
                     </div>
                   ))}
