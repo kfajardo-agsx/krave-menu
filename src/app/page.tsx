@@ -949,69 +949,62 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
+
+                  {/* Customer details (scrolls with order) */}
+                  <div className="space-y-3 pt-2">
+                    <input
+                      type="text"
+                      placeholder="Your name"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sakura-light focus:border-sakura"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Mobile number (e.g. 09171234567)"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sakura-light focus:border-sakura"
+                    />
+                    <textarea
+                      placeholder="Delivery address"
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      rows={2}
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sakura-light focus:border-sakura resize-none"
+                    />
+                    <div className="bg-sakura-50 border border-sakura-light rounded-xl p-3 text-sm text-gray-700 leading-relaxed">
+                      <p className="font-semibold text-gray-800 mb-1">
+                        How to send your order
+                      </p>
+                      <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-600">
+                        <li>Tap the button below — we&apos;ll copy your order.</li>
+                        <li>Messenger will open in a new tab.</li>
+                        <li>
+                          <span className="font-semibold text-sakura-dark">
+                            Paste the order into the chat
+                          </span>{" "}
+                          and hit send.
+                        </li>
+                      </ol>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
 
             {(bowls.length > 0 || extrasItems.length > 0) && (
-              <div className="border-t border-sakura-light px-4 py-4 space-y-4">
+              <div className="border-t border-sakura-light px-4 py-3 space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-lg">Total</span>
+                  <span className="font-bold">Total</span>
                   <span className="font-bold text-lg text-sakura-dark">
                     ₱{totalPrice}
                   </span>
                 </div>
 
-                <input
-                  type="text"
-                  placeholder="Your name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sakura-light focus:border-sakura"
-                />
-
-                <input
-                  type="tel"
-                  placeholder="Mobile number (e.g. 09171234567)"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sakura-light focus:border-sakura"
-                />
-
-                <textarea
-                  placeholder="Delivery address"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  rows={2}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sakura-light focus:border-sakura resize-none"
-                />
-
-                <div className="bg-sakura-50 border border-sakura-light rounded-xl p-3 text-sm text-gray-700 leading-relaxed">
-                  <p className="font-semibold text-gray-800 mb-1">
-                    How to send your order
-                  </p>
-                  <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-600">
-                    <li>Tap the button below — we&apos;ll copy your order.</li>
-                    <li>Messenger will open in a new tab.</li>
-                    <li>
-                      <span className="font-semibold text-sakura-dark">
-                        Paste the order into the chat
-                      </span>{" "}
-                      and hit send.
-                    </li>
-                  </ol>
-                </div>
-
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
-                  <span className="font-semibold">Heads up:</span> item
-                  availability depends on current stock at the shop. We&apos;ll
-                  confirm everything with you in chat before finalizing your
-                  order.
-                </p>
-
                 <button
                   onClick={handleSendOrder}
-                  className="w-full bg-[#0084ff] text-white font-bold py-3.5 rounded-full text-base hover:bg-[#0073e6] transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-[#0084ff] text-white font-bold py-3 rounded-full text-base hover:bg-[#0073e6] transition-colors flex items-center justify-center gap-2"
                 >
                   <svg
                     width="20"
