@@ -315,7 +315,7 @@ export default function Home() {
       {/* Menu */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed mb-6">
-          <span className="font-semibold">Heads up:</span> availability depends
+          <span className="font-semibold">Heads up:</span> Availability depends
           on current stock at the shop — we also serve walk-ins, so we&apos;ll
           confirm everything with you in chat before finalizing your order.
         </p>
@@ -412,7 +412,7 @@ export default function Home() {
                           )}
                         </div>
                         {item.description && (
-                          <p className="text-sm text-gray-500 mt-0.5">
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                             {item.description}
                           </p>
                         )}
@@ -560,7 +560,7 @@ export default function Home() {
                               {item.name}
                             </h3>
                             {item.description && (
-                              <p className="text-sm text-gray-500 mt-0.5">
+                              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                                 {item.description}
                               </p>
                             )}
@@ -590,7 +590,7 @@ export default function Home() {
                             {item.name}
                           </h3>
                           {item.description && (
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                               {item.description}
                             </p>
                           )}
@@ -1018,7 +1018,7 @@ export default function Home() {
                 </button>
 
                 <p className="text-xs text-gray-400 text-center">
-                  Payment details can be discussed in chat.
+                  Availability and Payment details can be discussed in chat.
                 </p>
               </div>
             )}
