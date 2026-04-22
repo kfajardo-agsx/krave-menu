@@ -300,6 +300,15 @@ export const menu: MenuCategory[] = [
         comingSoon: true,
       },
       {
+        id: "popcorn-chicken-cupbap",
+        name: "Popcorn Chicken Cupbap",
+        description:
+          "Crispy Korean popcorn chicken over hot rice — sweet, crunchy, crave-worthy.",
+        price: 0,
+        image: "/images/popcorn%20chicken.png",
+        comingSoon: true,
+      },
+      {
         id: "jumeokbap-diy-kit",
         name: "Jumeokbap DIY Kit",
         description:
