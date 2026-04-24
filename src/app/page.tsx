@@ -1046,6 +1046,21 @@ export default function Home() {
         </svg>
       </a>
 
+      {/* Hours */}
+      <section className="max-w-2xl mx-auto w-full px-4 pb-4">
+        <div className="bg-sakura-50 rounded-xl p-5 border border-sakura-light text-center">
+          <h3 className="font-bold text-gray-700 mb-2">Hours</h3>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            <span className="font-semibold">Mon – Fri:</span> 10am – 10pm
+            <br />
+            <span className="font-semibold">Saturday:</span> 12nn – 8pm
+            <br />
+            <span className="font-semibold">Sunday:</span>{" "}
+            <span className="text-gray-400">Closed</span>
+          </p>
+        </div>
+      </section>
+
       {/* Delivery info */}
       <section className="max-w-2xl mx-auto w-full px-4 pb-6">
         <div className="bg-sakura-50 rounded-xl p-5 border border-sakura-light text-center">
