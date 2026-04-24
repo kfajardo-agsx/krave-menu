@@ -286,10 +286,19 @@ export const menu: MenuCategory[] = [
     ],
   },
   {
-    id: "rice-meals",
-    name: "Rice Meals",
-    description: "Korean rice bowls and kits. Coming soon!",
+    id: "snacks-meals",
+    name: "Snacks & Meals",
+    description: "Korean snacks, rice bowls, and kits. Coming soon!",
     items: [
+      {
+        id: "popcorn-chicken-snack",
+        name: "Popcorn Chicken Snack",
+        description:
+          "Bite-sized Korean popcorn chicken — crispy, crave-worthy, perfect for snacking.",
+        price: 0,
+        image: "/images/popcorn%20chicken%20snack.png",
+        comingSoon: true,
+      },
       {
         id: "mayak-egg-cupbap",
         name: "Mayak Egg Cupbap",
