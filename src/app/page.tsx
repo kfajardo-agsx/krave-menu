@@ -457,6 +457,32 @@ export default function Home() {
                       </button>
                     </div>
                   ))}
+                  <div className="bg-sakura-50 rounded-xl p-4 border border-sakura-light">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      <span className="font-semibold text-sakura-dark">Prefer to cook at home?</span>{" "}
+                      You can also buy or have any ramen delivered uncooked at base price — perfect for adding your own toppings and customizations.{" "}
+                      <a
+                        href={`https://www.messenger.com/t/${FACEBOOK_PAGE}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sakura-dark font-semibold underline"
+                      >
+                        Just PM us!
+                      </a>
+                    </p>
+                    <p className="text-sm text-gray-600 leading-relaxed mt-2">
+                      <span className="font-semibold text-sakura-dark">✨ Heads up</span> — we sometimes run base-price promos tied to special occasions. Feel free to{" "}
+                      <a
+                        href={`https://www.messenger.com/t/${FACEBOOK_PAGE}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sakura-dark font-semibold underline"
+                      >
+                        PM us
+                      </a>{" "}
+                      to ask if any are coming up!
+                    </p>
+                  </div>
                 </div>
               ) : isCompact ? (
                 /* ── Compact grid (drinks) ── */
