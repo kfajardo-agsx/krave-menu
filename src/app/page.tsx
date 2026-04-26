@@ -590,6 +590,11 @@ export default function Home() {
                                 {item.description}
                               </p>
                             )}
+                            {item.note && (
+                              <p className="text-xs text-sakura-dark mt-1 italic">
+                                {item.note}
+                              </p>
+                            )}
                           </div>
                           <span className="shrink-0 text-xs font-bold text-sakura-dark bg-white border border-sakura-light px-3 py-1.5 rounded-full">
                             Coming Soon

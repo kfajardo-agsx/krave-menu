@@ -306,6 +306,7 @@ export const menu: MenuCategory[] = [
           "Soy-marinated 'mayak' eggs over hot rice — savory, sweet, and impossibly addicting.",
         price: 0,
         image: "/images/mayak%20egg%20with%20rice.png",
+        note: "We only marinate a few eggs a day, so stocks are limited.",
         comingSoon: true,
       },
       {
