@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { menu, APP_NAME, STORE_NAME, FACEBOOK_PAGE } from "@/data/menu";
 import type { MenuItem, MenuVariant, MenuOption } from "@/data/menu";
 
@@ -269,17 +270,30 @@ export default function Home() {
               Order via Facebook Messenger
             </p>
           </div>
-          {totalItems > 0 && (
-            <button
-              onClick={() => setShowOrder(true)}
-              className="relative bg-white text-sakura-dark font-semibold px-4 py-2 rounded-full text-sm hover:bg-sakura-50 transition-colors"
+          <div className="flex items-center gap-3">
+            <Link
+              href="/share"
+              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white font-semibold px-3 py-2 rounded-full text-sm transition-colors whitespace-nowrap"
             >
-              View Order
-              <span className="absolute -top-2 -right-2 bg-red-400 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                {totalItems}
-              </span>
-            </button>
-          )}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              Share photos
+            </Link>
+            {totalItems > 0 && (
+              <button
+                onClick={() => setShowOrder(true)}
+                className="relative bg-white text-sakura-dark font-semibold px-4 py-2 rounded-full text-sm hover:bg-sakura-50 transition-colors"
+              >
+                View Order
+                <span className="absolute -top-2 -right-2 bg-red-400 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {totalItems}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 

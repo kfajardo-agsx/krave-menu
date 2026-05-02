@@ -74,7 +74,7 @@ export const menu: MenuCategory[] = [
         name: "Samyang Cheesy Stir-Fry",
         description:
           "Samyang ramyeon cooked to perfection with our homemade cheese sauce — creamy, cheesy, mouth-watering.",
-        price: 150,
+        price: 165,
         image: "/images/cheesy%20stir-fry.png",
         // spicy: 3,
         note: "For delivery: to make sure we are giving you the best, we send our stir fry partly deconstructed so your noodles don't get mushy",
@@ -103,7 +103,7 @@ export const menu: MenuCategory[] = [
         name: "Ottogi Extra Cheesy Stir-Fry",
         description:
           "Ottogi stir-fry ramen loaded with our homemade cheese sauce for a creamier, even cheesier bite.",
-        price: 125,
+        price: 140,
         image: "/images/cheesy%20stir-fry.png",
         note: "For delivery: to make sure we are giving you the best, we send our stir fry partly deconstructed so your noodles don't get mushy",
         assemblyInstructions: [
@@ -288,8 +288,21 @@ export const menu: MenuCategory[] = [
   {
     id: "snacks-meals",
     name: "Snacks & Meals",
-    description: "Korean snacks, rice bowls, and kits. Coming soon!",
     items: [
+      {
+        id: "cheese-sticks",
+        name: "Cheese Sticks",
+        description: "Golden, crispy cheese sticks — gooey on the inside.",
+        price: 0,
+        comingSoon: true,
+      },
+      {
+        id: "french-fries",
+        name: "French Fries",
+        description: "Crispy fries your way — pick your flavor.",
+        price: 0,
+        comingSoon: true,
+      },
       {
         id: "popcorn-chicken-snack",
         name: "Popcorn Chicken Snack",
@@ -298,6 +311,17 @@ export const menu: MenuCategory[] = [
         price: 0,
         image: "/images/popcorn%20chicken%20snack.png",
         comingSoon: true,
+        optionGroups: [
+          {
+            id: "pc-snack-flavor",
+            name: "Choose your flavor",
+            options: [
+              { id: "original", name: "Original" },
+              { id: "bbq", name: "BBQ" },
+              { id: "cheese", name: "Cheese" },
+            ],
+          },
+        ],
       },
       {
         id: "mayak-egg-cupbap",
@@ -443,7 +467,7 @@ export const menu: MenuCategory[] = [
     showcase: true,
     image: "/images/bingsu.png",
     showcaseNote:
-      "Sorry, Bingsu isn't available for delivery! We don't want it to melt on the way to you — we want you to experience it at its best. Come visit us at KRAVE next time and try it fresh!",
+      "Sorry, Bingsu isn't available for delivery — we don't want it to melt on the way to you! That said, if you're less than 5 minutes away, send us a message and we'll see if we can work something out.",
     items: [
       {
         id: "bingsu-cookies-cream",
