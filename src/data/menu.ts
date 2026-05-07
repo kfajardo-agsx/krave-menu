@@ -46,6 +46,8 @@ export interface MenuItem {
   extras?: string;
   /** If true, item is a teaser — not orderable, "Coming Soon" badge instead of price/Add */
   comingSoon?: boolean;
+  /** Override the default 72px image size */
+  imageSize?: number;
 }
 
 export interface MenuCategory {
@@ -363,6 +365,14 @@ export const menu: MenuCategory[] = [
         description: "",
         price: 25,
         image: "/images/namkwang%20seaweed.png",
+      },
+      {
+        id: "bibigo-seaweed",
+        name: "Bibigo Seaweed",
+        description: "",
+        price: 30,
+        image: "/images/bibigo.jpg",
+        imageSize: 48,
       },
     ],
   },

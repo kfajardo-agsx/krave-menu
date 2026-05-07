@@ -484,7 +484,50 @@ export default function Home() {
                         Just PM us!
                       </a>
                     </p>
-                    <p className="text-sm text-gray-600 leading-relaxed mt-2">
+
+                    <div className="mt-3 space-y-2">
+                      <div>
+                        <p className="text-xs font-bold text-sakura-dark uppercase tracking-wide mb-1">— Soup Base —</p>
+                        <div className="space-y-0.5">
+                          {[
+                            { name: "Shin Ramyun Red", price: 65 },
+                            { name: "Jin Ramen Mild", price: 55 },
+                            { name: "Jin Ramen Spicy", price: 55 },
+                            { name: "Samyang Garlic and Clam MEP", price: 65 },
+                            { name: "Ottogi Ramen", price: 50 },
+                            { name: "Ottogi Cheese Ramen", price: 85 },
+                            { name: "Otoki Cheesy Ramen", price: 90 },
+                          ].map((r) => (
+                            <div key={r.name} className="flex justify-between text-sm text-gray-700">
+                              <span>{r.name}</span>
+                              <span className="font-semibold text-sakura-dark shrink-0 ml-3">₱{r.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-bold text-sakura-dark uppercase tracking-wide mb-1 mt-3 border-t border-sakura-light pt-2">— Stir-Fry —</p>
+                        <div className="space-y-0.5">
+                          {[
+                            { name: "Otoki Cheesy Ramen", price: 90 },
+                            { name: "Otoki Cheesy Ramen Spicy", price: 90 },
+                            { name: "Samyang Buldak Quattro Cheese", price: 110 },
+                            { name: "Samyang Buldak Carbonara", price: 110 },
+                            { name: "Samyang Buldak Rosè", price: 110 },
+                            { name: "Ottogi Stir-Fry Cheese Ramen", price: 85 },
+                            { name: "Ottogi Stir-Fry Cheese Ramen Spicy", price: 85 },
+                          ].map((r) => (
+                            <div key={r.name} className="flex justify-between text-sm text-gray-700">
+                              <span>{r.name}</span>
+                              <span className="font-semibold text-sakura-dark shrink-0 ml-3">₱{r.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-600 leading-relaxed mt-3">
                       <span className="font-semibold text-sakura-dark">✨ Heads up</span> — we sometimes run base-price promos tied to special occasions. Feel free to{" "}
                       <a
                         href={`https://www.messenger.com/t/${FACEBOOK_PAGE}`}
@@ -590,8 +633,8 @@ export default function Home() {
                             <Image
                               src={item.image}
                               alt={item.name}
-                              width={72}
-                              height={72}
+                              width={item.imageSize ?? 72}
+                              height={item.imageSize ?? 72}
                               className="rounded-lg object-contain shrink-0 mr-3 opacity-70"
                             />
                           )}
@@ -625,8 +668,8 @@ export default function Home() {
                           <Image
                             src={item.image}
                             alt={item.name}
-                            width={72}
-                            height={72}
+                            width={item.imageSize ?? 72}
+                            height={item.imageSize ?? 72}
                             className="rounded-lg object-contain shrink-0 mr-3"
                           />
                         )}
