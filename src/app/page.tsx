@@ -14,6 +14,8 @@ interface Bowl {
   variant: MenuVariant | null;
   /** Selected option per optionGroup.id */
   options: Record<string, MenuOption>;
+  /** Selected paid add-ons */
+  addOns: MenuOption[];
 }
 
 interface OrderItem {
@@ -25,7 +27,7 @@ interface OrderItem {
 
 function SpicyRating({ level }: { level: number }) {
   if (!level) return null;
-  const labels = ["", "Mild", "Spicy", "Very Spicy"];
+  const labels = ["", "Mild", "Medium", "Spicy", "Very Spicy"];
   return (
     <span
       className="inline-flex items-center text-sm leading-none align-middle"
@@ -57,6 +59,7 @@ export default function Home() {
   const [buildingOptions, setBuildingOptions] = useState<
     Record<string, MenuOption>
   >({});
+  const [buildingAddOns, setBuildingAddOns] = useState<MenuOption[]>([]);
 
   const mainCategories = menu;
 
@@ -123,10 +126,19 @@ export default function Home() {
       }
     }
     setBuildingOptions(initialOptions);
+    setBuildingAddOns([]);
   }
 
   function closeBowlBuilder() {
     setBuildingRamen(null);
+  }
+
+  function toggleAddOn(addOn: MenuOption) {
+    setBuildingAddOns((prev) =>
+      prev.some((a) => a.id === addOn.id)
+        ? prev.filter((a) => a.id !== addOn.id)
+        : [...prev, addOn]
+    );
   }
 
   function confirmBowl() {
@@ -138,6 +150,7 @@ export default function Home() {
         ramen: buildingRamen,
         variant: buildingVariant,
         options: buildingOptions,
+        addOns: buildingAddOns,
       },
     ]);
     closeBowlBuilder();
@@ -172,7 +185,10 @@ export default function Home() {
 
   /* ── Totals ── */
 
-  const bowlsTotal = bowls.reduce((sum, b) => sum + b.ramen.price, 0);
+  const addOnsSum = (items: MenuOption[]) =>
+    items.reduce((s, a) => s + (a.price ?? 0), 0);
+  const bowlPrice = (b: Bowl) => b.ramen.price + addOnsSum(b.addOns);
+  const bowlsTotal = bowls.reduce((sum, b) => sum + bowlPrice(b), 0);
   const extrasItems = Array.from(extras.values());
   const extrasTotal = extrasItems.reduce(
     (sum, o) => sum + o.item.price * o.qty,
@@ -183,7 +199,7 @@ export default function Home() {
     bowls.length + extrasItems.reduce((sum, o) => sum + o.qty, 0);
 
   /* Bowl builder running total */
-  const buildingTotal = buildingRamen?.price ?? 0;
+  const buildingTotal = (buildingRamen?.price ?? 0) + addOnsSum(buildingAddOns);
 
   /* ── Messenger message ── */
 
@@ -193,7 +209,7 @@ export default function Home() {
       const ramenLabel = bowl.variant
         ? `${bowl.ramen.name} (${bowl.variant.name})`
         : bowl.ramen.name;
-      lines.push(`Bowl ${i + 1}: ${ramenLabel} — ₱${bowl.ramen.price}`);
+      lines.push(`Bowl ${i + 1}: ${ramenLabel} — ₱${bowlPrice(bowl)}`);
       if (bowl.ramen.optionGroups) {
         for (const group of bowl.ramen.optionGroups) {
           const picked = bowl.options[group.id];
@@ -202,6 +218,9 @@ export default function Home() {
             lines.push(`  • ${group.name}: ${picked.name}${extra}`);
           }
         }
+      }
+      for (const a of bowl.addOns) {
+        lines.push(`  • Add-on: ${a.name} (+₱${a.price})`);
       }
     });
     if (extrasItems.length > 0) {
@@ -471,75 +490,6 @@ export default function Home() {
                       </button>
                     </div>
                   ))}
-                  <div className="bg-sakura-50 rounded-xl p-4 border border-sakura-light">
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      <span className="font-semibold text-sakura-dark">Prefer to cook at home?</span>{" "}
-                      You can also buy or have any ramen delivered uncooked at base price — perfect for adding your own toppings and customizations.{" "}
-                      <a
-                        href={`https://www.messenger.com/t/${FACEBOOK_PAGE}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sakura-dark font-semibold underline"
-                      >
-                        Just PM us!
-                      </a>
-                    </p>
-
-                    <div className="mt-3 space-y-2">
-                      <div>
-                        <p className="text-xs font-bold text-sakura-dark uppercase tracking-wide mb-1">— Soup Base —</p>
-                        <div className="space-y-0.5">
-                          {[
-                            { name: "Shin Ramyun Red", price: 65 },
-                            { name: "Jin Ramen Mild", price: 55 },
-                            { name: "Jin Ramen Spicy", price: 55 },
-                            { name: "Samyang Garlic and Clam MEP", price: 65 },
-                            { name: "Ottogi Ramen", price: 50 },
-                            { name: "Ottogi Cheese Ramen", price: 85 },
-                            { name: "Otoki Cheesy Ramen", price: 90 },
-                          ].map((r) => (
-                            <div key={r.name} className="flex justify-between text-sm text-gray-700">
-                              <span>{r.name}</span>
-                              <span className="font-semibold text-sakura-dark shrink-0 ml-3">₱{r.price}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-xs font-bold text-sakura-dark uppercase tracking-wide mb-1 mt-3 border-t border-sakura-light pt-2">— Stir-Fry —</p>
-                        <div className="space-y-0.5">
-                          {[
-                            { name: "Otoki Cheesy Ramen", price: 90 },
-                            { name: "Otoki Cheesy Ramen Spicy", price: 90 },
-                            { name: "Samyang Buldak Quattro Cheese", price: 110 },
-                            { name: "Samyang Buldak Carbonara", price: 110 },
-                            { name: "Samyang Buldak Rosè", price: 110 },
-                            { name: "Ottogi Stir-Fry Cheese Ramen", price: 85 },
-                            { name: "Ottogi Stir-Fry Cheese Ramen Spicy", price: 85 },
-                          ].map((r) => (
-                            <div key={r.name} className="flex justify-between text-sm text-gray-700">
-                              <span>{r.name}</span>
-                              <span className="font-semibold text-sakura-dark shrink-0 ml-3">₱{r.price}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-gray-600 leading-relaxed mt-3">
-                      <span className="font-semibold text-sakura-dark">✨ Heads up</span> — we sometimes run base-price promos tied to special occasions. Feel free to{" "}
-                      <a
-                        href={`https://www.messenger.com/t/${FACEBOOK_PAGE}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sakura-dark font-semibold underline"
-                      >
-                        PM us
-                      </a>{" "}
-                      to ask if any are coming up!
-                    </p>
-                  </div>
                 </div>
               ) : isCompact ? (
                 /* ── Compact grid (drinks) ── */
@@ -874,6 +824,63 @@ export default function Home() {
                 );
               })}
 
+              {/* Paid add-ons (optional toggles) */}
+              {buildingRamen.addOns && buildingRamen.addOns.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-gray-700 mb-2">
+                    Add-ons{" "}
+                    <span className="font-normal text-gray-400">(optional)</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {buildingRamen.addOns.map((addOn) => {
+                      const selected = buildingAddOns.some(
+                        (a) => a.id === addOn.id
+                      );
+                      return (
+                        <button
+                          key={addOn.id}
+                          onClick={() => toggleAddOn(addOn)}
+                          className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 border text-left transition-colors ${
+                            selected
+                              ? "border-sakura bg-sakura-50"
+                              : "border-gray-100 bg-white"
+                          }`}
+                        >
+                          {addOn.image && (
+                            <Image
+                              src={addOn.image}
+                              alt={addOn.name}
+                              width={40}
+                              height={40}
+                              className="rounded-md object-contain shrink-0"
+                            />
+                          )}
+                          <span
+                            className={`flex-1 text-sm font-semibold ${
+                              selected ? "text-sakura-dark" : "text-gray-800"
+                            }`}
+                          >
+                            {addOn.name}
+                          </span>
+                          <span className="text-sm font-semibold text-sakura-dark shrink-0">
+                            +₱{addOn.price}
+                          </span>
+                          <span
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs shrink-0 ${
+                              selected
+                                ? "bg-sakura border-sakura text-white"
+                                : "border-gray-300 text-transparent"
+                            }`}
+                          >
+                            ✓
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Delivery note */}
               {buildingRamen.note && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
@@ -959,7 +966,9 @@ export default function Home() {
               ) : (
                 <>
                   {/* Bowls */}
-                  {bowls.map((bowl, i) => (
+                  {bowls.map((bowl, i) => {
+                    const total = bowlPrice(bowl);
+                    return (
                     <div
                       key={bowl.id}
                       className="bg-gray-50 rounded-xl p-3 space-y-1"
@@ -995,11 +1004,18 @@ export default function Home() {
                           </p>
                         );
                       })}
+                      {bowl.addOns.map((a) => (
+                        <p key={a.id} className="text-sm text-gray-600 pl-3">
+                          <span className="text-gray-400">Add-on:</span>{" "}
+                          {a.name} (+₱{a.price})
+                        </p>
+                      ))}
                       <p className="text-sm font-semibold text-sakura-dark text-right">
-                        ₱{bowl.ramen.price}
+                        ₱{total}
                       </p>
                     </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Extras */}
                   {extrasItems.map((o) => (
