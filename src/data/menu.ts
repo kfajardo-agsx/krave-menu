@@ -525,6 +525,7 @@ const fullMenu: MenuCategory[] = [
         name: "IceTalk Watermelon Ade",
         description: "with cup of ice",
         price: 70,
+        image: "/images/icetalk%20watermelon.png",
       },
       {
         id: "icetalk-passion-mango",
