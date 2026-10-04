@@ -348,14 +348,16 @@ export default function Home() {
       {/* Menu */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed mb-6">
-          <span className="font-semibold">Heads up:</span> Availability depends
-          on current stock at the shop — we also serve walk-ins, so we&apos;ll
-          confirm everything with you in chat before finalizing your order.
+          <span className="font-semibold">Heads up:</span> We now cook from
+          home, and availability may still depend on what we have in stock —
+          we&apos;ll confirm everything with you in chat before finalizing your
+          order. Prices shown are Foodpanda prices; we always give a discount
+          when you order directly with us.
         </p>
 
         {mainCategories.map((category) => {
           const isRamen = category.id === "ramen";
-          const isCompact = category.id === "drinks";
+          const isCompact = category.id === "drinks" || category.id === "coffee";
 
           return (
             <section key={category.id} id={category.id} className="mb-8 scroll-mt-32">
@@ -1155,12 +1157,13 @@ export default function Home() {
         <div className="bg-sakura-50 rounded-xl p-5 border border-sakura-light text-center">
           <h3 className="font-bold text-gray-700 mb-2">Hours</h3>
           <p className="text-sm text-gray-600 leading-relaxed">
-            <span className="font-semibold">Mon – Fri:</span> 10am – 10pm
+            <span className="font-semibold">Mon – Wed:</span> 10am – 2am
             <br />
-            <span className="font-semibold">Saturday:</span> 12nn – 8pm
+            <span className="font-semibold">Thursday:</span> 10am – 6pm, 9pm – 2am
             <br />
-            <span className="font-semibold">Sunday:</span>{" "}
-            <span className="text-gray-400">Closed</span>
+            <span className="font-semibold">Fri – Sat:</span> 10am – 2am
+            <br />
+            <span className="font-semibold">Sunday:</span> 12:30pm – 2am
           </p>
         </div>
       </section>
@@ -1174,6 +1177,31 @@ export default function Home() {
             <span className="font-semibold">Maxim</span>. The delivery fee
             depends on the Maxim rate based on your location.
           </p>
+        </div>
+      </section>
+
+      {/* Location */}
+      <section className="max-w-2xl mx-auto w-full px-4 pb-6">
+        <div className="bg-sakura-50 rounded-xl p-5 border border-sakura-light text-center">
+          <h3 className="font-bold text-gray-700 mb-3">Our Location</h3>
+          <div className="rounded-lg overflow-hidden border border-sakura-light">
+            <iframe
+              title="KRAVE location map"
+              src="https://maps.google.com/maps?q=6.9464289,122.0759162&z=17&output=embed"
+              className="w-full h-64 border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          </div>
+          <a
+            href="https://maps.app.goo.gl/ogCqrNxBg5qRNRkF8"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-3 text-sm font-semibold text-sakura-dark hover:underline"
+          >
+            Open in Google Maps
+          </a>
         </div>
       </section>
 

@@ -52,6 +52,8 @@ export interface MenuItem {
   comingSoon?: boolean;
   /** Override the default 72px image size */
   imageSize?: number;
+  /** If true, item is temporarily removed from the menu (kept here for easy re-enable) */
+  hidden?: boolean;
 }
 
 export interface MenuCategory {
@@ -63,6 +65,8 @@ export interface MenuCategory {
   showcaseNote?: string;
   /** Optional hero image for the category (used in showcase layout) */
   image?: string;
+  /** If true, the whole category is temporarily removed from the menu */
+  hidden?: boolean;
   items: MenuItem[];
 }
 
@@ -140,12 +144,6 @@ const LOADED_TOPPINGS: MenuOption[] = [
     image: "/images/crabstick.png",
   },
   {
-    id: "cheese-slice",
-    name: "Cheese Slice",
-    description: "1 pc",
-    image: "/images/cheese%20slice.png",
-  },
-  {
     id: "fish-cheese-tofu",
     name: "Fish Cheese Tofu",
     description: "1 pc",
@@ -216,7 +214,7 @@ const STIRFRY_ASSEMBLY = [
   "Mix and enjoy!",
 ];
 
-export const menu: MenuCategory[] = [
+const fullMenu: MenuCategory[] = [
   {
     id: "ramen",
     name: "Ramyeon",
@@ -226,7 +224,7 @@ export const menu: MenuCategory[] = [
         name: "Classic Ramyeon",
         description:
           "Classic Korean ramyeon in a spicy broth cooked with love and a fresh egg. A comforting bowl that warms the soul with every savory slurp.",
-        price: 119,
+        price: 139,
         image: "/images/classic.jpg",
         extras: "Includes 1 fresh egg",
         variants: RAMYEON_BASE,
@@ -237,7 +235,7 @@ export const menu: MenuCategory[] = [
         name: "Loaded Ramyeon",
         description:
           "Classic spicy Korean ramyeon elevated with premium toppings.",
-        price: 179,
+        price: 199,
         image: "/images/loaded.jpg",
         extras: "Includes 1 egg and 2 toppings",
         optionGroups: [
@@ -256,7 +254,7 @@ export const menu: MenuCategory[] = [
           {
             id: "topping-2",
             name: "Topping 2 (pick one)",
-            defaultOptionId: "cheese-slice",
+            defaultOptionId: "fish-cheese-tofu",
             options: LOADED_TOPPINGS,
           },
         ],
@@ -266,7 +264,7 @@ export const menu: MenuCategory[] = [
         name: "Cheesy Samyang Buldak",
         description:
           "Your favorite Samyang stir-fried spicy noodles topped with a homemade cheese sauce.",
-        price: 199,
+        price: 209,
         image: "/images/cheese%20samyang.jpg",
         extras: "Includes homemade cheese sauce",
         note: STIRFRY_DELIVERY_NOTE,
@@ -278,6 +276,12 @@ export const menu: MenuCategory[] = [
             name: "Carbonara",
             image: "/images/samyang%20carbonara.png",
             spicy: 2,
+          },
+          {
+            id: "buldak-cream-carbonara",
+            name: "Cream Carbonara",
+            image: "/images/samyang%20cream%20carbonara.png",
+            spicy: 1,
           },
           {
             id: "buldak-rose",
@@ -292,6 +296,12 @@ export const menu: MenuCategory[] = [
             spicy: 3,
           },
           {
+            id: "buldak-2x-spicy",
+            name: "2x Spicy",
+            image: "/images/samyang%202x%20spicy.png",
+            spicy: 4,
+          },
+          {
             id: "buldak-3x-spicy",
             name: "3x Spicy",
             image: "/images/samyang%203x.png",
@@ -304,17 +314,11 @@ export const menu: MenuCategory[] = [
         name: "Cheesy Stir-Fry Ramyeon",
         description:
           "Creamy cheesy Korean stir-fried ramyeon noodles, available in mild or spicy heat levels.",
-        price: 139,
+        price: 149,
         image: "/images/cheese%20ramyeon.jpg",
         note: STIRFRY_DELIVERY_NOTE,
         assemblyInstructions: STIRFRY_ASSEMBLY,
         addOns: [
-          {
-            id: "cheese-slice",
-            name: "Cheese Slice",
-            price: 20,
-            image: "/images/cheeseslice.png",
-          },
           {
             id: "cheese-sauce",
             name: "Homemade Creamy Cheese Sauce",
@@ -349,11 +353,31 @@ export const menu: MenuCategory[] = [
           },
         ],
       },
+      {
+        id: "cheesy-broth-ramyeon",
+        name: "Cheesy Broth Ramyeon",
+        description: "Korean ramyeon in a rich, creamy cheese broth.",
+        price: 149,
+        image: "/images/cheesy%20broth%20ramyeon.png",
+        variants: [
+          {
+            id: "otoki-cheesy-ramen-cheddar",
+            name: "Otoki Cheesy Ramen Cheddar",
+            image: "/images/otoki%20broth%20cheesy.png",
+          },
+          {
+            id: "ottogi-cheese-ramen-broth",
+            name: "Ottogi Cheese Ramen",
+            image: "/images/ottogi%20cheese%20ramen.png",
+          },
+        ],
+      },
     ],
   },
   {
     id: "cupbaps",
     name: "Cupbaps",
+    hidden: true,
     items: [
       {
         id: "mayak-cupbap",
@@ -402,6 +426,7 @@ export const menu: MenuCategory[] = [
           "Four pieces of golden crispy cheese sticks with a crunchy exterior, paired with a mayo-ketchup dip.",
         price: 75,
         image: "/images/csticks.jpg",
+        hidden: true,
       },
       {
         id: "regular-fries",
@@ -410,98 +435,110 @@ export const menu: MenuCategory[] = [
           "Golden fries served plain or seasoned with a powder of your choice (plain salt, cheese, BBQ, or sour cream & onion). A perfect snack or side dish for any meal.",
         price: 55,
         image: "/images/rfries.jpg",
+        hidden: true,
+      },
+      {
+        id: "kimchi",
+        name: "Kimchi (100g)",
+        description: "100g of tangy, spicy Korean fermented cabbage.",
+        price: 80,
+        image: "/images/kimchi.png",
+      },
+    ],
+  },
+  {
+    id: "coffee",
+    name: "KRAVE Coffee",
+    description:
+      "Made with a medium roast Arabica blend from Benguet. Our vanilla syrup has real vanilla bean flecks, and we use Monin for our caramel sauce and syrup. Premium quality, at a more affordable price.",
+    items: [
+      {
+        id: "iced-spanish-latte",
+        name: "Iced Spanish Latte",
+        description: "",
+        price: 120,
+      },
+      {
+        id: "iced-caramel-latte",
+        name: "Iced Caramel Latte",
+        description: "",
+        price: 140,
+      },
+      {
+        id: "iced-vanilla-americano",
+        name: "Iced Vanilla Americano",
+        description: "",
+        price: 85,
+      },
+      {
+        id: "iced-caramel-macchiato",
+        name: "Iced Caramel Macchiato",
+        description: "",
+        price: 130,
       },
     ],
   },
   {
     id: "drinks",
-    name: "Drinks",
+    name: "Korean Pouch Drinks",
     description:
       "Korean pouch drinks (Baba, IceTalk, Cantabile) come with a cup of ice — just pour and sip. They're concentrated on purpose so the flavor balances perfectly as the ice melts.",
     items: [
       {
-        id: "baba-americano",
-        name: "Baba Americano",
+        id: "icetalk-blue-lemonade",
+        name: "IceTalk Blue Lemonade",
         description: "with cup of ice",
-        price: 65,
-        image: "/images/baba%20americano.png",
+        price: 70,
+        image: "/images/icetalk%20blue%20lemonade.png",
       },
       {
-        id: "baba-apple-mango-ade",
-        name: "Baba Apple Mango Ade Zero",
+        id: "icetalk-green-grape",
+        name: "IceTalk Green Grape Ade",
         description: "with cup of ice",
-        price: 65,
-        image: "/images/baba%20apple%20mango%20ade%20zero.png",
-        badge: "0 CAL",
+        price: 70,
+        image: "/images/icetalk%20greengrape.png",
       },
       {
-        id: "baba-caramel-macchiato",
-        name: "Baba Caramel Macchiato",
+        id: "icetalk-pomegranate",
+        name: "IceTalk Pomegranate Ade",
         description: "with cup of ice",
-        price: 65,
-        image: "/images/baba%20caramel%20machiatto.png",
-      },
-      {
-        id: "baba-hazelnut",
-        name: "Baba Hazelnut",
-        description: "with cup of ice",
-        price: 65,
-        image: "/images/baba%20hazelnut.png",
+        price: 70,
+        image: "/images/icetalk%20pomegranate.png",
       },
       {
         id: "cantabile-strawberry",
         name: "Cantabile Strawberry Ade",
         description: "with cup of ice",
-        price: 65,
+        price: 70,
         image: "/images/cantabile%20strawberry.png",
       },
       {
-        id: "icetalk-blue-lemonade",
-        name: "IceTalk Blue Lemonade",
+        id: "baba-apple-mango-ade",
+        name: "Baba Apple Mango Ade Zero",
         description: "with cup of ice",
-        price: 65,
-        image: "/images/icetalk%20blue%20lemonade.png",
+        price: 70,
+        image: "/images/baba%20apple%20mango%20ade%20zero.png",
+        badge: "0 CAL",
       },
       {
-        id: "icetalk-blueberry",
-        name: "IceTalk Blueberry Ade",
+        id: "icetalk-watermelon",
+        name: "IceTalk Watermelon Ade",
         description: "with cup of ice",
-        price: 65,
-        image: "/images/icetalk%20blueberry.png",
+        price: 70,
       },
       {
-        id: "icetalk-green-grape",
-        name: "IceTalk Green Grape",
+        id: "icetalk-passion-mango",
+        name: "IceTalk Passion Mango Ade",
         description: "with cup of ice",
-        price: 65,
-        image: "/images/icetalk%20greengrape.png",
-      },
-      {
-        id: "icetalk-kiwi",
-        name: "IceTalk Kiwi Ade",
-        description: "with cup of ice",
-        price: 65,
-        image: "/images/icetalk%20kiwi.png",
-      },
-      {
-        id: "icetalk-peach",
-        name: "IceTalk Peach Icetea",
-        description: "with cup of ice",
-        price: 65,
-        image: "/images/icetalk%20peach.png",
-      },
-      {
-        id: "icetalk-pomegranate",
-        name: "IceTalk Pomegranate",
-        description: "with cup of ice",
-        price: 65,
-        image: "/images/icetalk%20pomegranate.png",
+        price: 70,
+        image: "/images/icetalk%20passion%20mango.png",
       },
     ],
   },
   {
     id: "bingsu",
     name: "Bingsu",
+    hidden: true,
     description:
       "Real milk snow — Korean shaved ice made from real milk, not regular ice.",
     showcase: true,
@@ -536,3 +573,12 @@ export const menu: MenuCategory[] = [
     ],
   },
 ];
+
+/** Menu with hidden categories/items filtered out. */
+export const menu: MenuCategory[] = fullMenu
+  .filter((category) => !category.hidden)
+  .map((category) => ({
+    ...category,
+    items: category.items.filter((item) => !item.hidden),
+  }))
+  .filter((category) => category.items.length > 0);
