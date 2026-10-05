@@ -64,9 +64,10 @@ export default function SharePage() {
             Share Your Photos
           </h2>
           <p className="text-center text-sm text-gray-500 leading-relaxed">
-            We&apos;d love a copy of your photos! As a small business, it means
-            the world when you share your memories with us — we may feature them
-            on our socials to help others discover KRAVE too. Thank you!
+            We&apos;d love a copy of your order photos! As a small business, it
+            means the world when you share your memories with us. Also, if you
+            have some photos with us when our Tetuan shop was still open,
+            we&apos;d appreciate them too. Thank you!
           </p>
           <PhotoUpload />
         </section>
