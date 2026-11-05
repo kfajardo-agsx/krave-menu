@@ -187,7 +187,8 @@ export default function Home() {
 
   const addOnsSum = (items: MenuOption[]) =>
     items.reduce((s, a) => s + (a.price ?? 0), 0);
-  const bowlPrice = (b: Bowl) => b.ramen.price + addOnsSum(b.addOns);
+  const bowlPrice = (b: Bowl) =>
+    b.ramen.price + (b.variant?.price ?? 0) + addOnsSum(b.addOns);
   const bowlsTotal = bowls.reduce((sum, b) => sum + bowlPrice(b), 0);
   const extrasItems = Array.from(extras.values());
   const extrasTotal = extrasItems.reduce(
@@ -199,7 +200,10 @@ export default function Home() {
     bowls.length + extrasItems.reduce((sum, o) => sum + o.qty, 0);
 
   /* Bowl builder running total */
-  const buildingTotal = (buildingRamen?.price ?? 0) + addOnsSum(buildingAddOns);
+  const buildingTotal =
+    (buildingRamen?.price ?? 0) +
+    (buildingVariant?.price ?? 0) +
+    addOnsSum(buildingAddOns);
 
   /* ── Messenger message ── */
 
@@ -762,6 +766,11 @@ export default function Home() {
                             {variant.spicy ? (
                               <SpicyRating level={variant.spicy} />
                             ) : null}
+                            {variant.price ? (
+                              <span className="text-xs font-bold text-sakura-dark">
+                                +₱{variant.price}
+                              </span>
+                            ) : null}
                           </span>
                         </button>
                       );
@@ -991,6 +1000,9 @@ export default function Home() {
                           </p>
                           <p className="text-xs text-gray-500">
                             ₱{bowl.ramen.price}
+                            {bowl.variant?.price
+                              ? ` + ₱${bowl.variant.price}`
+                              : ""}
                           </p>
                         </div>
                         <button

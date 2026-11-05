@@ -4,6 +4,8 @@ export interface MenuVariant {
   image?: string;
   /** Heat level for this variant: 0 = not spicy, 1 = mild, 2 = medium, 3 = spicy, 4 = very spicy */
   spicy?: 0 | 1 | 2 | 3 | 4;
+  /** Extra cost added to the item's base price when this variant is picked */
+  price?: number;
 }
 
 export interface MenuOption {
@@ -168,12 +170,6 @@ const LOADED_TOPPINGS: MenuOption[] = [
     image: "/images/golden%20cheese%20ball.png",
   },
   {
-    id: "hello-kitty-fishcake",
-    name: "Hello Kitty Fishcake",
-    description: "2 pcs",
-    image: "/images/hello%20kitty%20fishcake.png",
-  },
-  {
     id: "narutomaki",
     name: "Narutomaki",
     description: "2 pcs",
@@ -301,12 +297,6 @@ const fullMenu: MenuCategory[] = [
             image: "/images/samyang%202x%20spicy.png",
             spicy: 4,
           },
-          {
-            id: "buldak-3x-spicy",
-            name: "3x Spicy",
-            image: "/images/samyang%203x.png",
-            spicy: 4,
-          },
         ],
       },
       {
@@ -339,18 +329,6 @@ const fullMenu: MenuCategory[] = [
             image: "/images/ottogi%20stirfry%20cheese%20ramen%20spicy.png",
             spicy: 2,
           },
-          {
-            id: "otoki-cheddar-mascarpone",
-            name: "Otoki Cheddar & Mascarpone",
-            image: "/images/otoki%20blue.png",
-            spicy: 0,
-          },
-          {
-            id: "otoki-spicy-chili-cheddar",
-            name: "Otoki Spicy Chili & Cheddar",
-            image: "/images/otoki%20pink.jpeg",
-            spicy: 2,
-          },
         ],
       },
       {
@@ -364,6 +342,7 @@ const fullMenu: MenuCategory[] = [
             id: "otoki-cheesy-ramen-cheddar",
             name: "Otoki Cheesy Ramen Cheddar",
             image: "/images/otoki%20broth%20cheesy.png",
+            price: 20,
           },
           {
             id: "ottogi-cheese-ramen-broth",
@@ -482,7 +461,7 @@ const fullMenu: MenuCategory[] = [
     id: "drinks",
     name: "Korean Pouch Drinks",
     description:
-      "Korean pouch drinks (Baba, IceTalk, Cantabile) come with a cup of ice — just pour and sip. They're concentrated on purpose so the flavor balances perfectly as the ice melts.",
+      "Korean pouch drinks (IceTalk, Cantabile) come with a cup of ice — just pour and sip. They're concentrated on purpose so the flavor balances perfectly as the ice melts.",
     items: [
       {
         id: "icetalk-blue-lemonade",
@@ -511,14 +490,6 @@ const fullMenu: MenuCategory[] = [
         description: "with cup of ice",
         price: 70,
         image: "/images/cantabile%20strawberry.png",
-      },
-      {
-        id: "baba-apple-mango-ade",
-        name: "Baba Apple Mango Ade Zero",
-        description: "with cup of ice",
-        price: 70,
-        image: "/images/baba%20apple%20mango%20ade%20zero.png",
-        badge: "0 CAL",
       },
       {
         id: "icetalk-watermelon",
